@@ -9,8 +9,8 @@ const trains = require('./routes/trains');
 app.use(cors());
 app.set('trust proxy', true);
 
-app.use('/api2/lorcana', lorcana);
-app.use('/api2/trains', trains);
+app.use('/api/lorcana', lorcana);
+app.use('/api/trains', trains);
 
 
 app.listen(5555, () => {
