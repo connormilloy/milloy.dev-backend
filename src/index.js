@@ -4,10 +4,10 @@ const app = express();
 const lorcana = require('./routes/lorcana');
 const trains = require('./routes/trains');
 
-app.use('/lorcana', lorcana);
-app.use('/trains', trains);
+app.use('/api2/lorcana', lorcana);
+app.use('/api2/trains', trains);
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+app.listen(5555, () => {
+  console.log('Server is running on port 5555');
 });
 
