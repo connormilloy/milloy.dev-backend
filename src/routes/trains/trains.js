@@ -1,22 +1,30 @@
 const express = require('express');
-const { validateParameters } = require('./utils/middlewares');
+const {
+  validateParameters,
+  strictRateLimiter,
+} = require('./utils/middlewares');
+const { findNextSpecificDeparture } = require('./utils/railAPI');
+
 const router = express.Router();
 router.get(
   '/get-next-from-origin-destination/:origin/:destination',
   validateParameters,
-  (req, res) => {
+  strictRateLimiter,
+  async (req, res) => {
     const { origin, destination } = req.params;
-
-    // Simulate fetching train data
-    const trainData = {
-      origin,
-      destination,
-      nextTrain: '12:30 PM',
-      duration: '1 hour 15 minutes',
-      price: '£25.00',
-    };
-
-    res.json(trainData);
+    try {
+      const nextDeparture = await findNextSpecificDeparture(
+        origin,
+        destination
+      );
+      res.json(nextDeparture);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        response: 'Failed to fetch next departure.',
+        message: error.message,
+      });
+    }
   }
 );
 
