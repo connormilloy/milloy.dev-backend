@@ -3,7 +3,10 @@ const {
   validateParameters,
   strictRateLimiter,
 } = require('./utils/middlewares');
-const { findNextSpecificDeparture } = require('./utils/railAPI');
+const {
+  findNextSpecificDeparture,
+  findUpcomingDepartures,
+} = require('./utils/railAPI');
 
 const router = express.Router();
 router.get(
@@ -49,6 +52,44 @@ router.get(
       } = nextDeparture;
 
       res.json({ destination: dest, platform, time });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        response: 'Failed to fetch next departure.',
+        message: error.message,
+      });
+    }
+  }
+);
+
+router.get(
+  '/get-next-departure-basic/:origin/:destination/:numDepartures',
+  validateParameters,
+  strictRateLimiter,
+  async (req, res) => {
+    const { origin, destination, numDepartures } = req.params;
+    try {
+      const data = await findUpcomingDepartures(
+        origin,
+        destination,
+        numDepartures
+      );
+
+      const formattedDepartures = data.map(
+        ({
+          locationDetail: {
+            destination: [{ description: dest }],
+            platform,
+            gbttBookedDeparture: time,
+          },
+        }) => ({
+          destination: dest,
+          platform,
+          time,
+        })
+      );
+
+      res.json(formattedDepartures);
     } catch (error) {
       console.log(error);
       res.status(500).json({
