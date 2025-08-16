@@ -1,5 +1,3 @@
-const rateLimit = require('express-rate-limit');
-
 // Verify that the station code conforms to the Common Reporting System (CRS) standard.
 const validateStationCode = (code) => /^[A-Z]{3}$/.test(code);
 
@@ -18,17 +16,6 @@ const validateParameters = (req, res, next) => {
   next();
 };
 
-const strictRateLimiter = rateLimit({
-  windowMs: 2000,
-  max: 1,
-  message: {
-    error: 'Too many requests, please wait before trying again.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 module.exports = {
   validateParameters,
-  strictRateLimiter,
 };
