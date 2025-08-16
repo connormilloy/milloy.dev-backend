@@ -1,7 +1,8 @@
 const express = require('express');
 const { validateParameters } = require('./utils/middlewares');
 const { strictRateLimiter } = require('../../utils/rateLimiters');
-const { findUpcomingDepartures } = require('./utils/railAPI');
+const { findUpcomingDepartures } = require('./utils/railUtils');
+const { findStationByQuery } = require('./utils/stationUtils');
 
 const router = express.Router();
 
@@ -28,5 +29,18 @@ router.get(
     }
   }
 );
+
+router.get('/get-stations', (req, res) => {
+  const query = (req.query.q || '').trim();
+
+  if (!query || query.length < 2) {
+    return res.station(400).json({
+      error: 'Query must be at least 2 characters long.',
+    });
+  }
+
+  const results = findStationByQuery(query);
+  res.json(results);
+});
 
 module.exports = router;
