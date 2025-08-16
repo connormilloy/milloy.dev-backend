@@ -4,11 +4,15 @@ const express = require('express');
 const router = express.Router();
 
 const { MongoClient } = require('mongodb');
-const rateLimit = require('express-rate-limit');
 const { pipeline } = require('stream');
 
 const fs = require('fs');
 const path = require('path');
+
+const {
+  strictRateLimiter,
+  relaxedRateLimiter,
+} = require('../../utils/rateLimiters');
 
 let db;
 
@@ -21,26 +25,6 @@ MongoClient.connect(process.env.DB_CONNECTION_STRING)
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
-
-const relaxedRateLimiter = rateLimit({
-  windowMs: 2000,
-  max: 5,
-  message: {
-    error: 'Too many requests, please wait before trying again.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const strictRateLimiter = rateLimit({
-  windowMs: 2000,
-  max: 1,
-  message: {
-    error: 'Too many requests, please wait before trying again.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 router.get('/set-champs', strictRateLimiter, async (req, res) => {
   try {

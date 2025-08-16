@@ -1,0 +1,719 @@
+{
+  "location": {
+    "name": "Barrhead",
+    "crs": "BRR",
+    "tiploc": "BRHD",
+    "country": "gb",
+    "system": "nr"
+  },
+  "filter": null,
+  "services": [
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "1923",
+        "gbttBookedDeparture": "1923",
+        "origin": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "185900",
+            "publicTime": "1859"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "193700",
+            "publicTime": "1937"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "1949",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "1949",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y65742",
+      "runDate": "2025-08-04",
+      "trainIdentity": "1A03",
+      "runningIdentity": "1A03",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "1953",
+        "gbttBookedDeparture": "1953",
+        "origin": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "192900",
+            "publicTime": "1929"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "201500",
+            "publicTime": "2015"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "1953",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "1953",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67189",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A05",
+      "runningIdentity": "2A05",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "1954",
+        "gbttBookedDeparture": "1956",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "193300",
+            "publicTime": "1933"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "202100",
+            "publicTime": "2021"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "1953",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "1956",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67191",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A08",
+      "runningIdentity": "2A08",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2021",
+        "gbttBookedDeparture": "2021",
+        "origin": [
+          {
+            "tiploc": "CARLILE",
+            "description": "Carlisle",
+            "workingTime": "175900",
+            "publicTime": "1759"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "203700",
+            "publicTime": "2037"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2113",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2113",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "cancelReasonCode": "XW",
+        "cancelReasonShortText": "high winds",
+        "cancelReasonLongText": "high winds",
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y66648",
+      "runDate": "2025-08-04",
+      "trainIdentity": "1L94",
+      "runningIdentity": "1L94",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2028",
+        "gbttBookedDeparture": "2028",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "201700",
+            "publicTime": "2017"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "205330",
+            "publicTime": "2054"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2028",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2028",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y65771",
+      "runDate": "2025-08-04",
+      "trainIdentity": "1A10",
+      "runningIdentity": "1A10",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2052",
+        "gbttBookedDeparture": "2052",
+        "origin": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "202800",
+            "publicTime": "2028"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "211600",
+            "publicTime": "2116"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2052",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2052",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67193",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A09",
+      "runningIdentity": "2A09",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2054",
+        "gbttBookedDeparture": "2055",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "203300",
+            "publicTime": "2033"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "212400",
+            "publicTime": "2124"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2053",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2055",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67198",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A12",
+      "runningIdentity": "2A12",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2130",
+        "gbttBookedDeparture": "2130",
+        "origin": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "210600",
+            "publicTime": "2106"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "214300",
+            "publicTime": "2143"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2130",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2130",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67196",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A11",
+      "runningIdentity": "2A11",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2125",
+        "gbttBookedDeparture": "2132",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "211400",
+            "publicTime": "2114"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "DUMFRES",
+            "description": "Dumfries",
+            "workingTime": "230300",
+            "publicTime": "2303"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2125",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2132",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y65790",
+      "runDate": "2025-08-04",
+      "trainIdentity": "1A14",
+      "runningIdentity": "1A14",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2158",
+        "gbttBookedDeparture": "2158",
+        "origin": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "213400",
+            "publicTime": "2134"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "222000",
+            "publicTime": "2220"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2158",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2158",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67201",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A13",
+      "runningIdentity": "2A13",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2155",
+        "gbttBookedDeparture": "2200",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "213400",
+            "publicTime": "2134"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "222530",
+            "publicTime": "2226"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2154",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2200",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67207",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A16",
+      "runningIdentity": "2A16",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2225",
+        "gbttBookedDeparture": "2225",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "221400",
+            "publicTime": "2214"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "DUMFRES",
+            "description": "Dumfries",
+            "workingTime": "235700",
+            "publicTime": "2357"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2225",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2225",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67212",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A18",
+      "runningIdentity": "2A18",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2223",
+        "gbttBookedDeparture": "2226",
+        "origin": [
+          {
+            "tiploc": "DUMFRES",
+            "description": "Dumfries",
+            "workingTime": "204900",
+            "publicTime": "2049"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "223900",
+            "publicTime": "2239"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2222",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2226",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67203",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A15",
+      "runningIdentity": "2A15",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2257",
+        "gbttBookedDeparture": "2259",
+        "origin": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "223230",
+            "publicTime": "2232"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "232400",
+            "publicTime": "2324"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2256",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2259",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67208",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A17",
+      "runningIdentity": "2A17",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2254",
+        "gbttBookedDeparture": "2259",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "223300",
+            "publicTime": "2233"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "232400",
+            "publicTime": "2324"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2253",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2259",
+        "realtimeDepartureActual": false,
+        "platform": "1",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67217",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A20",
+      "runningIdentity": "2A20",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    },
+    {
+      "locationDetail": {
+        "realtimeActivated": true,
+        "tiploc": "BRHD",
+        "crs": "BRR",
+        "description": "Barrhead",
+        "gbttBookedArrival": "2336",
+        "gbttBookedDeparture": "2336",
+        "origin": [
+          {
+            "tiploc": "GLGC",
+            "description": "Glasgow Central",
+            "workingTime": "231400",
+            "publicTime": "2314"
+          }
+        ],
+        "destination": [
+          {
+            "tiploc": "KILMRNK",
+            "description": "Kilmarnock",
+            "workingTime": "000100",
+            "publicTime": "0001"
+          }
+        ],
+        "isCall": true,
+        "isPublicCall": true,
+        "realtimeArrival": "2335",
+        "realtimeArrivalActual": false,
+        "realtimeDeparture": "2336",
+        "realtimeDepartureActual": false,
+        "platform": "2",
+        "platformConfirmed": false,
+        "platformChanged": false,
+        "displayAs": "CALL"
+      },
+      "serviceUid": "Y67221",
+      "runDate": "2025-08-04",
+      "trainIdentity": "2A22",
+      "runningIdentity": "2A22",
+      "atocCode": "SR",
+      "atocName": "ScotRail",
+      "serviceType": "train",
+      "isPassenger": true
+    }
+  ]
+}
