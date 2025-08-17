@@ -3,6 +3,7 @@ const { validateParameters } = require('./utils/middlewares');
 const { strictRateLimiter } = require('../../utils/rateLimiters');
 const { findUpcomingDepartures } = require('./utils/railUtils');
 const { findStationByQuery } = require('./utils/stationUtils');
+const { logWithTimestamp } = require('../../utils/logwithTimestamp');
 
 const router = express.Router();
 
@@ -19,12 +20,28 @@ router.get(
         numDepartures
       );
 
-      res.json(departures);
+      if (!departures) {
+        res.status(200).json({
+          success: true,
+          message: `No upcoming departures found from ${origin} to ${destination}.`,
+          response: [],
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Upcoming departures from ${origin} to ${destination}.`,
+        response: departures,
+      });
     } catch (error) {
-      console.log(error);
+      logWithTimestamp(
+        `Failed to fetch departures from ${origin} to ${destination}: ${error.message}`
+      );
+
       res.status(500).json({
-        response: 'Failed to fetch next departure.',
-        message: error.message,
+        success: false,
+        message: `Failed to fetch upcoming departures - ${error.message}`,
+        data: null,
       });
     }
   }

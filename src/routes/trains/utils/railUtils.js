@@ -43,7 +43,7 @@ const findUpcomingDepartures = async (
       await fetchSpecificDepartureInformationForStation(origin, destination);
 
     if (!departures || departures.length === 0) {
-      throw new Error(`No departures found from ${origin} to ${destination}.`);
+      return null;
     }
 
     return departures

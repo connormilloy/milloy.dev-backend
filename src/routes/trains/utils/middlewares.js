@@ -9,8 +9,10 @@ const validateParameters = (req, res, next) => {
 
   if (!validParams) {
     return res.status(400).json({
-      error:
+      success: false,
+      message:
         'Parameters are not in expected format. Origin and Destination should conform with CRS - see http://www.railwaycodes.org.uk/stations/station1.shtm for more information.',
+      data: null,
     });
   }
   next();
