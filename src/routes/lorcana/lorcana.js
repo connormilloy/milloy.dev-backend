@@ -16,16 +16,6 @@ const {
 
 let db;
 
-MongoClient.connect(process.env.DB_CONNECTION_STRING)
-  .then((client) => {
-    db = client.db('milloy-dev');
-    console.log(`MongoDB connected successfully!`);
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
-
 router.get('/set-champs', strictRateLimiter, async (req, res) => {
   try {
     const data = fs.readFileSync(
