@@ -13,13 +13,14 @@ const {
   strictRateLimiter,
   relaxedRateLimiter,
 } = require('../../utils/rateLimiters');
+const { logWithTimestamp } = require('../../utils/logwithTimestamp');
 
 let db;
 
 MongoClient.connect(process.env.DB_CONNECTION_STRING)
   .then((client) => {
     db = client.db('milloy-dev');
-    console.log(`MongoDB connected successfully!`);
+    logWithTimestamp(`MongoDB connected successfully!`);
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err);
