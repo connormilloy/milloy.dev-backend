@@ -16,6 +16,7 @@ This document describes the available endpoints implemented under `src/routes/da
 - GET /matches
 - POST /matches/:id/result
 - GET /standings
+ - PATCH /matches/:id/result
 
 ---
 
@@ -58,6 +59,10 @@ When a new player is added, the service automatically creates fixtures (two matc
   - `INVALID_MATCH_FILTER` / `INVALID_LIMIT` / `INVALID_SORT` (400)
 - For SQLite constraint errors (SQLITE_CONSTRAINT) the route returns 400 with `error: "INVALID_REQUEST"`.
 - Unexpected server errors return 500 with `error: "INTERNAL_SERVER_ERROR"`.
+
+Authentication / write-protection:
+- Several endpoints that modify server state require an API key. The server uses a `requireApiKey` middleware on the following endpoints: `POST /players`, `PATCH /players/:id`, `DELETE /players/:id`, `POST /matches/:id/result`, and `PATCH /matches/:id/result`.
+- Read-only endpoints (`GET /players`, `GET /players/:id`, `GET /matches`, `GET /standings`) do not require the API key.
 
 Example error response format (one of the patterns used by routes):
 
@@ -107,12 +112,16 @@ Example response:
   - `id` (integer) - player id
 - Response: 200
 
-Response structure:
+Response structure (example):
 ```json
 {
-  "player": { "id": <int>, "name": <string>, "created_at": <string> },
-  "playedMatches": [ /* played matches with results */ ],
-  "pendingMatches": [ /* scheduled matches not yet played */ ]
+  "player": {
+    "id": 1,
+    "name": "Alice",
+    "created_at": "2024-01-01 12:00:00"
+  },
+  "playedMatches": [],
+  "pendingMatches": []
 }
 ```
 
@@ -158,7 +167,8 @@ Errors:
 
 ### 3) POST /players
 
-- Description: Create a new player and automatically create fixtures (matches) between the new player and all existing players (two matches per opponent: one where new player is player_a and vice versa).
+ - Description: Create a new player and automatically create fixtures (matches) between the new player and all existing players (two matches per opponent: one where new player is player_a and vice versa).
+ - Authentication: Requires API key (send via whatever mechanism your app uses for the API key middleware).
 - Request body (JSON):
   - `name` (string) - required
 - Successful response: 201
@@ -197,6 +207,7 @@ Notes:
 ### 4) PATCH /players/:id
 
 - Description: Rename a player.
+ - Authentication: Requires API key.
 - Path parameters:
   - `id` (integer) - player id
 - Request body (JSON):
@@ -238,6 +249,7 @@ Errors:
 - Path parameters:
   - `id` (integer) - player id
 - Successful response: 200
+ - Authentication: Requires API key.
 
 Response example:
 
@@ -322,6 +334,7 @@ Errors:
 ### 7) POST /matches/:id/result
 
 - Description: Record a BO3 match result for the match with id `:id`. Validates match existence, that it has not already been played, and that the provided legs represent a valid BO3 result.
+ - Authentication: Requires API key.
 - Path parameters:
   - `id` (integer) - match id
 - Request body (JSON):
@@ -365,6 +378,54 @@ Errors:
 - 400 `INVALID_MATCH_RESULT` if the result is not a valid BO3.
 - 404 `MATCH_NOT_FOUND` if the match id doesn't exist.
 - 409 `MATCH_ALREADY_PLAYED` if the match already has been recorded.
+- 400 `INVALID_PLAYER_ID` if the path id is invalid.
+
+---
+
+### 7b) PATCH /matches/:id/result
+
+ - Description: Update or correct the recorded BO3 match result for a given match id. Unlike the `POST /matches/:id/result` endpoint, this route does not fail if a result already exists — it will overwrite the stored legs/winner for the match. It still validates the BO3 legs format and that the match exists.
+ - Path parameters:
+   - `id` (integer) - match id
+ - Request body (JSON):
+   - `playerALegs` (integer) - required, one of 0,1,2
+   - `playerBLegs` (integer) - required, one of 0,1,2
+ - Authentication: Requires API key.
+
+Request example:
+
+```json
+{
+  "playerALegs": 2,
+  "playerBLegs": 1
+}
+```
+
+Successful response: 200
+
+Response example:
+
+```json
+{
+  "message": "Match result updated successfully",
+  "match": {
+    "id": 10,
+    "player_a_id": 1,
+    "player_b_id": 2,
+    "player_a_legs": 2,
+    "player_b_legs": 1,
+    "winner_player_id": 1,
+    "played": 1,
+    "played_at": "2024-04-01 20:00:00",
+    "player_a_name": "Alice",
+    "player_b_name": "Bob"
+  }
+}
+```
+
+Errors:
+- 400 `INVALID_MATCH_RESULT` if the result is not a valid BO3.
+- 404 `MATCH_NOT_FOUND` if the match id doesn't exist.
 - 400 `INVALID_PLAYER_ID` if the path id is invalid.
 
 ---
