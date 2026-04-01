@@ -592,9 +592,25 @@ function getPlayerDetails(playerId) {
   };
 }
 
+function updateMatchResult(matchId, playerALegs, playerBLegs) {
+  const match = getMatchByIdStmt.get(Number(matchId));
+
+  if (!match) {
+    throw createAppError('Match not found', 'MATCH_NOT_FOUND', 404);
+  }
+
+  const { aLegs, bLegs } = validateBo3Result(playerALegs, playerBLegs);
+  const winnerPlayerId = aLegs > bLegs ? match.player_a_id : match.player_b_id;
+
+  updateMatchResultStmt.run(aLegs, bLegs, winnerPlayerId, match.id);
+
+  return getMatchByIdStmt.get(match.id);
+}
+
 module.exports = {
   addPlayer,
   recordMatchResult,
+  updateMatchResult,
   getMatches,
   getStandings,
   getPlayers,

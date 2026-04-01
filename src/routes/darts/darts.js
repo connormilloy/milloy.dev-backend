@@ -2,6 +2,7 @@ const express = require('express');
 const {
   addPlayer,
   recordMatchResult,
+  updateMatchResult,
   getMatches,
   getStandings,
   getPlayers,
@@ -10,6 +11,7 @@ const {
   deletePlayer,
 } = require('./database/service');
 
+const { requireApiKey } = require('./auth');
 const router = express.Router();
 
 router.use(express.json());
@@ -61,7 +63,7 @@ router.get('/players/:id', (req, res) => {
   }
 });
 
-router.post('/players', (req, res) => {
+router.post('/players', requireApiKey, (req, res) => {
   try {
     const { name } = req.body;
     const result = addPlayer(name);
@@ -76,7 +78,7 @@ router.post('/players', (req, res) => {
   }
 });
 
-router.patch('/players/:id', (req, res) => {
+router.patch('/players/:id', requireApiKey, (req, res) => {
   try {
     const { name } = req.body;
     const player = renamePlayer(req.params.id, name);
@@ -90,7 +92,7 @@ router.patch('/players/:id', (req, res) => {
   }
 });
 
-router.delete('/players/:id', (req, res) => {
+router.delete('/players/:id', requireApiKey, (req, res) => {
   try {
     const result = deletePlayer(req.params.id);
 
@@ -122,7 +124,7 @@ router.get('/matches', (req, res) => {
   }
 });
 
-router.post('/matches/:id/result', (req, res) => {
+router.post('/matches/:id/result', requireApiKey, (req, res) => {
   try {
     const { playerALegs, playerBLegs } = req.body;
 
@@ -138,6 +140,25 @@ router.post('/matches/:id/result', (req, res) => {
     });
   } catch (err) {
     return sendRouteError(res, err, 'Failed to record match result');
+  }
+});
+
+router.patch('/matches/:id/result', requireApiKey, (req, res) => {
+  try {
+    const { playerALegs, playerBLegs } = req.body;
+
+    const match = updateMatchResult(
+      Number(req.params.id),
+      playerALegs,
+      playerBLegs
+    );
+
+    return res.status(200).json({
+      message: 'Match result updated successfully',
+      match,
+    });
+  } catch (err) {
+    return sendRouteError(res, err, 'Failed to update match result');
   }
 });
 
