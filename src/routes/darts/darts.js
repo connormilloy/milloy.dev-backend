@@ -12,6 +12,7 @@ const {
 } = require('./database/service');
 
 const { requireApiKey } = require('./auth');
+const { strictRateLimiter, relaxedRateLimiter } = require('../../utils/rateLimiters');
 const router = express.Router();
 
 router.use(express.json());
@@ -40,7 +41,7 @@ function sendRouteError(res, err, fallbackMessage = 'Something went wrong') {
 }
 
 // Players
-router.get('/players', (req, res) => {
+router.get('/players', relaxedRateLimiter, (req, res) => {
   try {
     const players = getPlayers();
 
@@ -53,7 +54,7 @@ router.get('/players', (req, res) => {
   }
 });
 
-router.get('/players/:id', (req, res) => {
+router.get('/players/:id', relaxedRateLimiter, (req, res) => {
   try {
     const result = getPlayerDetails(req.params.id);
 
@@ -63,7 +64,7 @@ router.get('/players/:id', (req, res) => {
   }
 });
 
-router.post('/players', requireApiKey, (req, res) => {
+router.post('/players', strictRateLimiter, requireApiKey, (req, res) => {
   try {
     const { name } = req.body;
     const result = addPlayer(name);
@@ -78,7 +79,7 @@ router.post('/players', requireApiKey, (req, res) => {
   }
 });
 
-router.patch('/players/:id', requireApiKey, (req, res) => {
+router.patch('/players/:id', strictRateLimiter, requireApiKey, (req, res) => {
   try {
     const { name } = req.body;
     const player = renamePlayer(req.params.id, name);
@@ -92,7 +93,7 @@ router.patch('/players/:id', requireApiKey, (req, res) => {
   }
 });
 
-router.delete('/players/:id', requireApiKey, (req, res) => {
+router.delete('/players/:id', strictRateLimiter, requireApiKey, (req, res) => {
   try {
     const result = deletePlayer(req.params.id);
 
@@ -106,7 +107,7 @@ router.delete('/players/:id', requireApiKey, (req, res) => {
 });
 
 // Matches
-router.get('/matches', (req, res) => {
+router.get('/matches', relaxedRateLimiter, (req, res) => {
   try {
     const matches = getMatches({
       played: req.query.played,
@@ -124,7 +125,7 @@ router.get('/matches', (req, res) => {
   }
 });
 
-router.post('/matches/:id/result', requireApiKey, (req, res) => {
+router.post('/matches/:id/result', strictRateLimiter, requireApiKey, (req, res) => {
   try {
     const { playerALegs, playerBLegs } = req.body;
 
@@ -143,7 +144,7 @@ router.post('/matches/:id/result', requireApiKey, (req, res) => {
   }
 });
 
-router.patch('/matches/:id/result', requireApiKey, (req, res) => {
+router.patch('/matches/:id/result', strictRateLimiter, requireApiKey, (req, res) => {
   try {
     const { playerALegs, playerBLegs } = req.body;
 
@@ -163,7 +164,7 @@ router.patch('/matches/:id/result', requireApiKey, (req, res) => {
 });
 
 // Standings
-router.get('/standings', (req, res) => {
+router.get('/standings', relaxedRateLimiter, (req, res) => {
   try {
     const standings = getStandings();
 

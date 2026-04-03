@@ -60,9 +60,23 @@ When a new player is added, the service automatically creates fixtures (two matc
 - For SQLite constraint errors (SQLITE_CONSTRAINT) the route returns 400 with `error: "INVALID_REQUEST"`.
 - Unexpected server errors return 500 with `error: "INTERNAL_SERVER_ERROR"`.
 
-Authentication / write-protection:
+Authentication / write-protection and rate limiting:
+
 - Several endpoints that modify server state require an API key. The server uses a `requireApiKey` middleware on the following endpoints: `POST /players`, `PATCH /players/:id`, `DELETE /players/:id`, `POST /matches/:id/result`, and `PATCH /matches/:id/result`.
 - Read-only endpoints (`GET /players`, `GET /players/:id`, `GET /matches`, `GET /standings`) do not require the API key.
+
+Rate limiting (applied per-route):
+
+- `relaxedRateLimiter` (window: 2000ms, max: 5 requests per window) is applied to non-destructive, read-only routes: `GET /players`, `GET /players/:id`, `GET /matches`, and `GET /standings`.
+- `strictRateLimiter` (window: 2000ms, max: 1 request per window) is applied to destructive or state-changing routes: `POST /players`, `PATCH /players/:id`, `DELETE /players/:id`, `POST /matches/:id/result`, and `PATCH /matches/:id/result`.
+
+Rate limit responses follow the express-rate-limit default structure and return a 429 status with a JSON message like:
+
+```json
+{
+  "error": "Too many requests, please wait before trying again."
+}
+```
 
 Example error response format (one of the patterns used by routes):
 
@@ -82,6 +96,7 @@ Example error response format (one of the patterns used by routes):
 - Description: Returns all players ordered by name.
 - Request: no path or query parameters.
 - Response: 200
+- Rate limiting: `relaxedRateLimiter` (2s window, max 5)
 
 Example response:
 
@@ -111,6 +126,7 @@ Example response:
 - Path parameters:
   - `id` (integer) - player id
 - Response: 200
+- Rate limiting: `relaxedRateLimiter` (2s window, max 5)
 
 Response structure (example):
 ```json
@@ -172,6 +188,7 @@ Errors:
 - Request body (JSON):
   - `name` (string) - required
 - Successful response: 201
+- Rate limiting: `strictRateLimiter` (2s window, max 1)
 
 Request example:
 
@@ -213,6 +230,7 @@ Notes:
 - Request body (JSON):
   - `name` (string) - required
 - Successful response: 200
+- Rate limiting: `strictRateLimiter` (2s window, max 1)
 
 Request example:
 
@@ -250,6 +268,7 @@ Errors:
   - `id` (integer) - player id
 - Successful response: 200
  - Authentication: Requires API key.
+- Rate limiting: `strictRateLimiter` (2s window, max 1)
 
 Response example:
 
@@ -282,6 +301,7 @@ Errors:
 Default ordering (when `sort=default`) is: unplayed matches first (played ASC), then played matches ordered by played_at descending, then id ascending.
 
 Response: 200
+- Rate limiting: `relaxedRateLimiter` (2s window, max 5)
 
 Example request URLs:
 - `/api/darts/matches` (all matches)
@@ -354,6 +374,8 @@ Request example:
 
 Successful response: 200
 
+- Rate limiting: `strictRateLimiter` (2s window, max 1)
+
 Response example:
 
 ```json
@@ -403,6 +425,8 @@ Request example:
 
 Successful response: 200
 
+- Rate limiting: `strictRateLimiter` (2s window, max 1)
+
 Response example:
 
 ```json
@@ -434,6 +458,7 @@ Errors:
 
 - Description: Returns computed standings for all players. Each row includes id, name and computed stats.
 - Response: 200
+- Rate limiting: `relaxedRateLimiter` (2s window, max 5)
 
 Response fields (per row):
 - `id`, `name`
