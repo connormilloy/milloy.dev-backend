@@ -462,7 +462,7 @@ Errors:
 
 Response fields (per row):
 - `id`, `name`
-- `points` (2 points for a win)
+- `points` (1 point for a win)
 - `legs_won`
 - `legs_against`
 - `played` (number of matches played)
