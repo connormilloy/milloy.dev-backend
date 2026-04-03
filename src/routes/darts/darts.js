@@ -12,10 +12,62 @@ const {
 } = require('./database/service');
 
 const { requireApiKey } = require('./auth');
-const { strictRateLimiter, relaxedRateLimiter } = require('../../utils/rateLimiters');
+// Using darts-specific rate limiters below to relax limits for this service
+const rateLimit = require('express-rate-limit');
+
+// Darts-specific (more lenient) rate limiters to reduce 429s for this service.
+// These are applied to routes in this file only to avoid changing global defaults
+// used elsewhere in the app.
+const dartsStrictRateLimiter = rateLimit({
+  windowMs: 10000, // 10s window
+  max: 5, // allow 5 state-changing requests per window
+  message: { error: 'Too many requests, please wait before trying again.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const dartsRelaxedRateLimiter = rateLimit({
+  windowMs: 10000, // 10s window
+  max: 25, // allow 25 read requests per window
+  message: { error: 'Too many requests, please wait before trying again.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const router = express.Router();
 
 router.use(express.json());
+
+// Admin: validate API key without creating a session/token. Frontend will POST { key }
+// and expect 200 for valid key, 401/403 for invalid. This mirrors the server-side
+// API key check used by `requireApiKey` but does not rely on headers.
+router.post('/admin/auth', (req, res) => {
+  try {
+    const provided = req && req.body ? req.body.key : undefined;
+
+    if (!process.env.DARTS_API_KEY) {
+      console.error('DARTS_API_KEY is not configured');
+      return res.status(500).json({
+        error: 'SERVER_MISCONFIGURED',
+        message: 'API key authentication is not configured',
+      });
+    }
+
+    if (!provided || provided !== process.env.DARTS_API_KEY) {
+      return res
+        .status(401)
+        .json({ error: 'UNAUTHORIZED', message: 'Invalid API key' });
+    }
+
+    // valid key
+    return res.status(200).json({ message: 'OK' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to validate API key',
+    });
+  }
+});
 
 function sendRouteError(res, err, fallbackMessage = 'Something went wrong') {
   if (err && Number.isInteger(err.status)) {
@@ -41,7 +93,7 @@ function sendRouteError(res, err, fallbackMessage = 'Something went wrong') {
 }
 
 // Players
-router.get('/players', relaxedRateLimiter, (req, res) => {
+router.get('/players', dartsRelaxedRateLimiter, (req, res) => {
   try {
     const players = getPlayers();
 
@@ -54,7 +106,7 @@ router.get('/players', relaxedRateLimiter, (req, res) => {
   }
 });
 
-router.get('/players/:id', relaxedRateLimiter, (req, res) => {
+router.get('/players/:id', dartsRelaxedRateLimiter, (req, res) => {
   try {
     const result = getPlayerDetails(req.params.id);
 
@@ -64,7 +116,7 @@ router.get('/players/:id', relaxedRateLimiter, (req, res) => {
   }
 });
 
-router.post('/players', strictRateLimiter, requireApiKey, (req, res) => {
+router.post('/players', dartsStrictRateLimiter, requireApiKey, (req, res) => {
   try {
     const { name } = req.body;
     const result = addPlayer(name);
@@ -79,35 +131,45 @@ router.post('/players', strictRateLimiter, requireApiKey, (req, res) => {
   }
 });
 
-router.patch('/players/:id', strictRateLimiter, requireApiKey, (req, res) => {
-  try {
-    const { name } = req.body;
-    const player = renamePlayer(req.params.id, name);
+router.patch(
+  '/players/:id',
+  dartsStrictRateLimiter,
+  requireApiKey,
+  (req, res) => {
+    try {
+      const { name } = req.body;
+      const player = renamePlayer(req.params.id, name);
 
-    return res.status(200).json({
-      message: 'Player renamed successfully',
-      player,
-    });
-  } catch (err) {
-    return sendRouteError(res, err, 'Failed to rename player');
+      return res.status(200).json({
+        message: 'Player renamed successfully',
+        player,
+      });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to rename player');
+    }
   }
-});
+);
 
-router.delete('/players/:id', strictRateLimiter, requireApiKey, (req, res) => {
-  try {
-    const result = deletePlayer(req.params.id);
+router.delete(
+  '/players/:id',
+  dartsStrictRateLimiter,
+  requireApiKey,
+  (req, res) => {
+    try {
+      const result = deletePlayer(req.params.id);
 
-    return res.status(200).json({
-      message: 'Player deleted successfully',
-      player: result.player,
-    });
-  } catch (err) {
-    return sendRouteError(res, err, 'Failed to delete player');
+      return res.status(200).json({
+        message: 'Player deleted successfully',
+        player: result.player,
+      });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to delete player');
+    }
   }
-});
+);
 
 // Matches
-router.get('/matches', relaxedRateLimiter, (req, res) => {
+router.get('/matches', dartsRelaxedRateLimiter, (req, res) => {
   try {
     const matches = getMatches({
       played: req.query.played,
@@ -125,46 +187,56 @@ router.get('/matches', relaxedRateLimiter, (req, res) => {
   }
 });
 
-router.post('/matches/:id/result', strictRateLimiter, requireApiKey, (req, res) => {
-  try {
-    const { playerALegs, playerBLegs } = req.body;
+router.post(
+  '/matches/:id/result',
+  dartsStrictRateLimiter,
+  requireApiKey,
+  (req, res) => {
+    try {
+      const { playerALegs, playerBLegs } = req.body;
 
-    const match = recordMatchResult(
-      Number(req.params.id),
-      playerALegs,
-      playerBLegs
-    );
+      const match = recordMatchResult(
+        Number(req.params.id),
+        playerALegs,
+        playerBLegs
+      );
 
-    return res.status(200).json({
-      message: 'Match result recorded successfully',
-      match,
-    });
-  } catch (err) {
-    return sendRouteError(res, err, 'Failed to record match result');
+      return res.status(200).json({
+        message: 'Match result recorded successfully',
+        match,
+      });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to record match result');
+    }
   }
-});
+);
 
-router.patch('/matches/:id/result', strictRateLimiter, requireApiKey, (req, res) => {
-  try {
-    const { playerALegs, playerBLegs } = req.body;
+router.patch(
+  '/matches/:id/result',
+  dartsStrictRateLimiter,
+  requireApiKey,
+  (req, res) => {
+    try {
+      const { playerALegs, playerBLegs } = req.body;
 
-    const match = updateMatchResult(
-      Number(req.params.id),
-      playerALegs,
-      playerBLegs
-    );
+      const match = updateMatchResult(
+        Number(req.params.id),
+        playerALegs,
+        playerBLegs
+      );
 
-    return res.status(200).json({
-      message: 'Match result updated successfully',
-      match,
-    });
-  } catch (err) {
-    return sendRouteError(res, err, 'Failed to update match result');
+      return res.status(200).json({
+        message: 'Match result updated successfully',
+        match,
+      });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to update match result');
+    }
   }
-});
+);
 
 // Standings
-router.get('/standings', relaxedRateLimiter, (req, res) => {
+router.get('/standings', dartsRelaxedRateLimiter, (req, res) => {
   try {
     const standings = getStandings();
 
