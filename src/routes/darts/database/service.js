@@ -322,7 +322,7 @@ function getStandings() {
 
       COALESCE(SUM(
         CASE
-          WHEN m.played = 1 AND m.winner_player_id = p.id THEN 2
+          WHEN m.played = 1 AND m.winner_player_id = p.id THEN 1
           ELSE 0
         END
       ), 0) AS points,
