@@ -156,6 +156,7 @@ Example response:
       "played": 1,
       "played_at": "2024-02-01 18:00:00",
       "created_at": "2024-01-10 12:00:00",
+      "is_player_a": true,
       "opponent_id": 2,
       "opponent_name": "Bob",
       "legs_for": 2,
@@ -168,6 +169,7 @@ Example response:
       "id": 11,
       "played": 0,
       "created_at": "2024-01-11 12:00:00",
+      "is_player_a": false,
       "opponent_id": 3,
       "opponent_name": "Charlie"
     }

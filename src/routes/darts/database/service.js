@@ -500,6 +500,11 @@ function getPlayedMatchesForPlayer(playerId) {
       m.created_at,
 
       CASE
+        WHEN m.player_a_id = ? THEN 1
+        ELSE 0
+      END AS is_player_a,
+
+      CASE
         WHEN m.player_a_id = ? THEN m.player_b_id
         ELSE m.player_a_id
       END AS opponent_id,
@@ -533,9 +538,9 @@ function getPlayedMatchesForPlayer(playerId) {
       AND m.played = 1
 
     ORDER BY datetime(m.played_at) DESC, m.id DESC
-  `
+    `
     )
-    .all(parsed, parsed, parsed, parsed, parsed, parsed, parsed);
+    .all(parsed, parsed, parsed, parsed, parsed, parsed, parsed, parsed);
 }
 
 function getPendingMatchesForPlayer(playerId) {
@@ -558,6 +563,11 @@ function getPendingMatchesForPlayer(playerId) {
       m.created_at,
 
       CASE
+        WHEN m.player_a_id = ? THEN 1
+        ELSE 0
+      END AS is_player_a,
+
+      CASE
         WHEN m.player_a_id = ? THEN m.player_b_id
         ELSE m.player_a_id
       END AS opponent_id,
@@ -575,9 +585,9 @@ function getPendingMatchesForPlayer(playerId) {
       AND m.played = 0
 
     ORDER BY m.id ASC
-  `
+    `
     )
-    .all(parsed, parsed, parsed, parsed);
+    .all(parsed, parsed, parsed, parsed, parsed);
 }
 
 function getPlayerDetails(playerId) {
