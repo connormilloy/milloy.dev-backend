@@ -3,17 +3,16 @@ const app = express();
 const { logWithTimestamp } = require('./utils/logwithTimestamp');
 const cors = require('cors');
 const { initDartsDB } = require('./routes/darts/database/init');
+const { connectMongo } = require('./database/mongo');
 
 
 app.use(cors());
 app.set('trust proxy', true);
 app.use(express.json());
 
-// Route modules are required after the database is initialized to avoid
-// preparing SQL statements (which run at require-time) before tables exist.
-
 async function startServer() {
   await initDartsDB();
+  await connectMongo();
 
   // Require route modules after DB init so their DB-backed modules can
   // prepare statements against existing tables.
