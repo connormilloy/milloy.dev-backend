@@ -1,9 +1,7 @@
-require('dotenv').config();
 const express = require('express');
 
 const router = express.Router();
 
-const { MongoClient } = require('mongodb');
 const { pipeline } = require('stream');
 
 const fs = require('fs');
@@ -13,19 +11,7 @@ const {
   strictRateLimiter,
   relaxedRateLimiter,
 } = require('../../utils/rateLimiters');
-const { logWithTimestamp } = require('../../utils/logwithTimestamp');
-
-let db;
-
-MongoClient.connect(process.env.DB_CONNECTION_STRING)
-  .then((client) => {
-    db = client.db('milloy-dev');
-    logWithTimestamp(`MongoDB connected successfully!`);
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
+const { getDb } = require('../../database/mongo');
 
 router.get('/set-champs', strictRateLimiter, async (req, res) => {
   try {
@@ -48,7 +34,7 @@ router.get('/set-champs', strictRateLimiter, async (req, res) => {
 
 router.get('/random-card', relaxedRateLimiter, async (req, res) => {
   try {
-    const card = await db
+    const card = await getDb()
       .collection('lorcana-cards')
       .aggregate([{ $sample: { size: 1 } }])
       .next();
