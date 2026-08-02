@@ -5,13 +5,11 @@ const {
   BOARDS_COLLECTION,
   CARDS_COLLECTION,
   TAGS_COLLECTION,
-} = require('./collections');
-const {
-  usersValidator,
-  boardsValidator,
-  cardsValidator,
-  tagsValidator,
-} = require('./schemas');
+} = require('./shared/collections');
+const { usersValidator } = require('./users/users.schema');
+const { boardsValidator } = require('./kanban/boards/boards.schema');
+const { cardsValidator } = require('./kanban/cards/cards.schema');
+const { tagsValidator } = require('./tags/tags.schema');
 
 // Creates the collection with its validator if it doesn't exist yet, or
 // updates the validator in place (collMod) if it does. Keeps startup

@@ -1,7 +1,7 @@
-const { getDb } = require('../../database/mongo');
-const { createAppError } = require('./errors');
-const { parseObjectId } = require('./ids');
-const { USERS_COLLECTION } = require('./collections');
+const { getDb } = require('../../../database/mongo');
+const { createAppError } = require('../shared/errors');
+const { parseObjectId } = require('../shared/ids');
+const { USERS_COLLECTION } = require('../shared/collections');
 
 function usersCollection() {
   return getDb().collection(USERS_COLLECTION);

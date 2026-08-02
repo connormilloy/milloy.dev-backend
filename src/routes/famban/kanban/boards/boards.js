@@ -8,9 +8,9 @@ const {
   renameColumn,
   deleteColumn,
 } = require('./boards.service');
-const { requireApiKey } = require('../auth');
-const { sendRouteError } = require('../errors');
-const { fambanRateLimiter } = require('../rateLimiters');
+const { requireApiKey } = require('../../shared/auth');
+const { sendRouteError } = require('../../shared/errors');
+const { fambanRateLimiter } = require('../../shared/rateLimiters');
 
 const router = express.Router();
 

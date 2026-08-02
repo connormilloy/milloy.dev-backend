@@ -1,8 +1,11 @@
 const crypto = require('crypto');
-const { getDb } = require('../../../database/mongo');
-const { createAppError } = require('../errors');
-const { parseObjectId } = require('../ids');
-const { BOARDS_COLLECTION, CARDS_COLLECTION } = require('../collections');
+const { getDb } = require('../../../../database/mongo');
+const { createAppError } = require('../../shared/errors');
+const { parseObjectId } = require('../../shared/ids');
+const {
+  BOARDS_COLLECTION,
+  CARDS_COLLECTION,
+} = require('../../shared/collections');
 
 const DEFAULT_COLUMN_NAMES = ['To Do', 'In Progress', 'Done'];
 

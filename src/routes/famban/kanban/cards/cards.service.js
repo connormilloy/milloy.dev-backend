@@ -1,11 +1,11 @@
 const crypto = require('crypto');
-const { getDb } = require('../../../database/mongo');
-const { createAppError } = require('../errors');
-const { parseObjectId } = require('../ids');
-const { CARDS_COLLECTION } = require('../collections');
-const { resolveUserIds } = require('../users.service');
-const { resolveTagIds } = require('../tags.service');
-const { getBoardById, requireColumn } = require('./boards.service');
+const { getDb } = require('../../../../database/mongo');
+const { createAppError } = require('../../shared/errors');
+const { parseObjectId } = require('../../shared/ids');
+const { CARDS_COLLECTION } = require('../../shared/collections');
+const { resolveUserIds } = require('../../users/users.service');
+const { resolveTagIds } = require('../../tags/tags.service');
+const { getBoardById, requireColumn } = require('../boards/boards.service');
 
 const CARD_STATUSES = ['open', 'done', 'closed'];
 

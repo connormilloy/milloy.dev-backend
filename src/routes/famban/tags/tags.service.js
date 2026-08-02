@@ -1,7 +1,7 @@
-const { getDb } = require('../../database/mongo');
-const { createAppError } = require('./errors');
-const { parseObjectId } = require('./ids');
-const { TAGS_COLLECTION, CARDS_COLLECTION } = require('./collections');
+const { getDb } = require('../../../database/mongo');
+const { createAppError } = require('../shared/errors');
+const { parseObjectId } = require('../shared/ids');
+const { TAGS_COLLECTION, CARDS_COLLECTION } = require('../shared/collections');
 
 const DEFAULT_COLOR = '#94a3b8';
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
