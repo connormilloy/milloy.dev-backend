@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Famban Login Test</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 12px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      button {
+        margin-top: 12px;
+        padding: 8px 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Famban Login Test</h1>
+    <p>Backend: <code id="api-base"></code></p>
+
+    <div id="g_id_signin"></div>
+
+    <button id="test-me" disabled>Test GET /auth/me with stored token</button>
+    <button id="clear">Clear session</button>
+
+    <pre id="output">Not logged in yet.</pre>
+
+    <script>
+      const API_BASE = 'http://localhost:5555/api/famban';
+      const CLIENT_ID =
+        '518607459029-8u66mtgsugkfp6v9ca9hq4ljrkqrp0iu.apps.googleusercontent.com';
+      let sessionToken = null;
+
+      document.getElementById('api-base').textContent = API_BASE;
+
+      function log(obj) {
+        document.getElementById('output').textContent = JSON.stringify(obj, null, 2);
+      }
+
+      async function handleCredentialResponse(response) {
+        log({ step: 'POST /auth/google', status: 'in flight...' });
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            log({ step: 'POST /auth/google', status: res.status, error: data });
+            return;
+          }
+
+          sessionToken = data.token;
+          document.getElementById('test-me').disabled = false;
+          log({ step: 'POST /auth/google', status: res.status, response: data });
+        } catch (err) {
+          log({ step: 'POST /auth/google', error: String(err) });
+        }
+      }
+
+      window.onload = function () {
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: handleCredentialResponse,
+        });
+        google.accounts.id.renderButton(document.getElementById('g_id_signin'), {
+          theme: 'outline',
+          size: 'large',
+        });
+      };
+
+      document.getElementById('test-me').addEventListener('click', async () => {
+        if (!sessionToken) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${sessionToken}` },
+          });
+          const data = await res.json();
+          log({ step: 'GET /auth/me', status: res.status, response: data });
+        } catch (err) {
+          log({ step: 'GET /auth/me', error: String(err) });
+        }
+      });
+
+      document.getElementById('clear').addEventListener('click', () => {
+        sessionToken = null;
+        document.getElementById('test-me').disabled = true;
+        log('Session cleared.');
+      });
+    </script>
+  </body>
+</html>

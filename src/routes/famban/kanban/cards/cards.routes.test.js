@@ -4,6 +4,7 @@ const request = require('supertest');
 jest.mock('./cards.service');
 const cardsService = require('./cards.service');
 
+const { createSessionToken } = require('../../shared/session');
 const cardsRouter = require('./cards');
 
 function buildApp() {
@@ -16,20 +17,36 @@ function buildApp() {
 describe('cards router', () => {
   const OLD_ENV = process.env;
   const cardId = '507f1f77bcf86cd799439011';
+  const sessionUserId = '507f191e810c19729de860ea';
+  let authHeader;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env = { ...OLD_ENV, FAMBAN_API_KEY: 'test-key' };
+    process.env = { ...OLD_ENV, FAMBAN_SESSION_SECRET: 'test-secret' };
+    const token = createSessionToken({
+      userId: sessionUserId,
+      email: 'connor@example.com',
+    });
+    authHeader = `Bearer ${token}`;
   });
 
   afterAll(() => {
     process.env = OLD_ENV;
   });
 
-  test('GET /cards does not require an API key', async () => {
+  test('GET /cards requires a session', async () => {
+    const res = await request(buildApp()).get('/api/famban/kanban/cards');
+
+    expect(res.status).toBe(401);
+    expect(cardsService.listCards).not.toHaveBeenCalled();
+  });
+
+  test('GET /cards returns data for a valid session', async () => {
     cardsService.listCards.mockResolvedValue([]);
 
-    const res = await request(buildApp()).get('/api/famban/kanban/cards');
+    const res = await request(buildApp())
+      .get('/api/famban/kanban/cards')
+      .set('Authorization', authHeader);
 
     expect(res.status).toBe(200);
     expect(cardsService.listCards).toHaveBeenCalled();
@@ -42,7 +59,7 @@ describe('cards router', () => {
     ['post', `/api/famban/kanban/cards/${cardId}/assign`],
     ['post', `/api/famban/kanban/cards/${cardId}/tags`],
     ['post', `/api/famban/kanban/cards/${cardId}/comments`],
-  ])('%s %s rejects requests without an API key', async (method, path) => {
+  ])('%s %s rejects requests without a session', async (method, path) => {
     const res = await request(buildApp())[method](path).send({});
 
     expect(res.status).toBe(401);
@@ -56,7 +73,7 @@ describe('cards router', () => {
 
     const res = await request(buildApp())
       .post(`/api/famban/kanban/cards/${cardId}/status`)
-      .set('x-api-key', 'test-key')
+      .set('Authorization', authHeader)
       .send({ status: 'done' });
 
     expect(res.status).toBe(200);
@@ -71,24 +88,24 @@ describe('cards router', () => {
 
     const res = await request(buildApp())
       .post(`/api/famban/kanban/cards/${cardId}/assign`)
-      .set('x-api-key', 'test-key')
+      .set('Authorization', authHeader)
       .send({ assigneeIds: ['u1'] });
 
     expect(res.status).toBe(200);
     expect(cardsService.setCardAssignees).toHaveBeenCalledWith(cardId, ['u1']);
   });
 
-  test('POST /cards/:id/comments returns 201 and forwards userId/text', async () => {
+  test('POST /cards/:id/comments uses the session identity for userId, ignoring any client-supplied value', async () => {
     cardsService.addComment.mockResolvedValue({ _id: cardId, comments: [] });
 
     const res = await request(buildApp())
       .post(`/api/famban/kanban/cards/${cardId}/comments`)
-      .set('x-api-key', 'test-key')
-      .send({ userId: 'u1', text: 'On it' });
+      .set('Authorization', authHeader)
+      .send({ userId: 'attacker-supplied-id', text: 'On it' });
 
     expect(res.status).toBe(201);
     expect(cardsService.addComment).toHaveBeenCalledWith(cardId, {
-      userId: 'u1',
+      userId: sessionUserId,
       text: 'On it',
     });
   });
@@ -99,9 +116,9 @@ describe('cards router', () => {
     err.status = 404;
     cardsService.getCardById.mockRejectedValue(err);
 
-    const res = await request(buildApp()).get(
-      `/api/famban/kanban/cards/${cardId}`
-    );
+    const res = await request(buildApp())
+      .get(`/api/famban/kanban/cards/${cardId}`)
+      .set('Authorization', authHeader);
 
     expect(res.status).toBe(404);
     expect(res.body).toEqual({

@@ -9,13 +9,13 @@ const {
   setCardTags,
   addComment,
 } = require('./cards.service');
-const { requireApiKey } = require('../../shared/auth');
+const { requireSession } = require('../../shared/requireSession');
 const { sendRouteError } = require('../../shared/errors');
 const { fambanRateLimiter } = require('../../shared/rateLimiters');
 
 const router = express.Router();
 
-router.get('/', fambanRateLimiter, async (req, res) => {
+router.get('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const cards = await listCards({
       boardId: req.query.boardId,
@@ -31,7 +31,7 @@ router.get('/', fambanRateLimiter, async (req, res) => {
   }
 });
 
-router.get('/:id', fambanRateLimiter, async (req, res) => {
+router.get('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const card = await getCardById(req.params.id);
 
@@ -41,7 +41,7 @@ router.get('/:id', fambanRateLimiter, async (req, res) => {
   }
 });
 
-router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.post('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { boardId, columnId, title, description, assignees, tags } = req.body;
     const card = await createCard({
@@ -59,7 +59,7 @@ router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
   }
 });
 
-router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.patch('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { title, description, columnId, order } = req.body;
     const card = await updateCard(req.params.id, {
@@ -78,7 +78,7 @@ router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
 router.post(
   '/:id/status',
   fambanRateLimiter,
-  requireApiKey,
+  requireSession,
   async (req, res) => {
     try {
       const card = await setCardStatus(req.params.id, req.body.status);
@@ -95,7 +95,7 @@ router.post(
 router.post(
   '/:id/assign',
   fambanRateLimiter,
-  requireApiKey,
+  requireSession,
   async (req, res) => {
     try {
       const card = await setCardAssignees(req.params.id, req.body.assigneeIds);
@@ -109,26 +109,34 @@ router.post(
   }
 );
 
-router.post('/:id/tags', fambanRateLimiter, requireApiKey, async (req, res) => {
-  try {
-    const card = await setCardTags(req.params.id, req.body.tagIds);
+router.post(
+  '/:id/tags',
+  fambanRateLimiter,
+  requireSession,
+  async (req, res) => {
+    try {
+      const card = await setCardTags(req.params.id, req.body.tagIds);
 
-    return res
-      .status(200)
-      .json({ message: 'Card tags updated successfully', card });
-  } catch (err) {
-    return sendRouteError(res, err, 'Failed to update card tags');
+      return res
+        .status(200)
+        .json({ message: 'Card tags updated successfully', card });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to update card tags');
+    }
   }
-});
+);
 
 router.post(
   '/:id/comments',
   fambanRateLimiter,
-  requireApiKey,
+  requireSession,
   async (req, res) => {
     try {
-      const { userId, text } = req.body;
-      const card = await addComment(req.params.id, { userId, text });
+      const { text } = req.body;
+      const card = await addComment(req.params.id, {
+        userId: req.fambanUser.userId,
+        text,
+      });
 
       return res
         .status(201)

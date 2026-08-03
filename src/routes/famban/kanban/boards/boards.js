@@ -8,13 +8,13 @@ const {
   renameColumn,
   deleteColumn,
 } = require('./boards.service');
-const { requireApiKey } = require('../../shared/auth');
+const { requireSession } = require('../../shared/requireSession');
 const { sendRouteError } = require('../../shared/errors');
 const { fambanRateLimiter } = require('../../shared/rateLimiters');
 
 const router = express.Router();
 
-router.get('/', fambanRateLimiter, async (req, res) => {
+router.get('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const boards = await listBoards();
 
@@ -24,7 +24,7 @@ router.get('/', fambanRateLimiter, async (req, res) => {
   }
 });
 
-router.get('/:id', fambanRateLimiter, async (req, res) => {
+router.get('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const board = await getBoardById(req.params.id);
 
@@ -34,7 +34,7 @@ router.get('/:id', fambanRateLimiter, async (req, res) => {
   }
 });
 
-router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.post('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { name, description, columns } = req.body;
     const board = await createBoard({ name, description, columns });
@@ -47,7 +47,7 @@ router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
   }
 });
 
-router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.patch('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { name, description } = req.body;
     const board = await updateBoard(req.params.id, { name, description });
@@ -63,7 +63,7 @@ router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
 router.post(
   '/:id/columns',
   fambanRateLimiter,
-  requireApiKey,
+  requireSession,
   async (req, res) => {
     try {
       const column = await addColumn(req.params.id, req.body.name);
@@ -80,7 +80,7 @@ router.post(
 router.patch(
   '/:id/columns/:columnId',
   fambanRateLimiter,
-  requireApiKey,
+  requireSession,
   async (req, res) => {
     try {
       const column = await renameColumn(
@@ -101,7 +101,7 @@ router.patch(
 router.delete(
   '/:id/columns/:columnId',
   fambanRateLimiter,
-  requireApiKey,
+  requireSession,
   async (req, res) => {
     try {
       await deleteColumn(req.params.id, req.params.columnId);

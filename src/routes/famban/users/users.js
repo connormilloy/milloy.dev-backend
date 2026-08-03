@@ -1,12 +1,12 @@
 const express = require('express');
 const { listUsers, createUser, updateUser } = require('./users.service');
-const { requireApiKey } = require('../shared/auth');
+const { requireSession } = require('../shared/requireSession');
 const { sendRouteError } = require('../shared/errors');
 const { fambanRateLimiter } = require('../shared/rateLimiters');
 
 const router = express.Router();
 
-router.get('/', fambanRateLimiter, async (req, res) => {
+router.get('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const users = await listUsers();
 
@@ -16,7 +16,7 @@ router.get('/', fambanRateLimiter, async (req, res) => {
   }
 });
 
-router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.post('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { name, email } = req.body;
     const user = await createUser({ name, email });
@@ -27,7 +27,7 @@ router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
   }
 });
 
-router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.patch('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { name, email, active } = req.body;
     const user = await updateUser(req.params.id, { name, email, active });
