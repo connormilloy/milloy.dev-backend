@@ -1,6 +1,6 @@
 # Famban API Documentation
 
-Base URL: `/api/famban`
+Base URL: `/api/famban` (local dev: `http://localhost:5555/api/famban`, server listens on port 5555 - see `src/index.js`)
 
 This document describes the available endpoints implemented under `src/routes/famban`. Famban is the umbrella for family-oriented tools; `users` and `tags` are shared across every module, and `kanban` (boards + cards) is the first module built on top of them. It includes each endpoint's purpose, inputs (path/query/body), returned JSON, and common error responses.
 
@@ -106,6 +106,7 @@ Indexes: `famban-users.email` (unique, sparse), `famban-tags.name` (unique, case
 
 - Errors use `{ "error": "<CODE>", "message": "<human readable>" }`. The service layer throws typed errors (`createAppError(message, code, status)`); the route handler translates these via `sendRouteError`.
 - Unexpected server errors return 500 with `error: "INTERNAL_SERVER_ERROR"`.
+- Successful response envelope: creates/updates return `{ message: "<description>", <resourceName>: {...} }` (e.g. `{ message, user }`, `{ message, card }`); lists return `{ count, <resourceName>s: [...] }`; deletes return just `{ message }`. `GET /:id` endpoints and `POST /auth/google` are the exceptions - see their entries below for exact shape.
 - Common error codes:
   - `INVALID_ID` (400) - malformed ObjectId in a path/query param
   - `USER_NAME_REQUIRED` / `TAG_NAME_REQUIRED` / `BOARD_NAME_REQUIRED` / `CARD_TITLE_REQUIRED` / `COLUMN_NAME_REQUIRED` / `COMMENT_TEXT_REQUIRED` (400)
@@ -541,5 +542,7 @@ Errors: `COMMENT_TEXT_REQUIRED` (400), `CARD_NOT_FOUND` (404).
 - Dates are ISO 8601 strings (`Date` serialized via `JSON.stringify`).
 - `status` and `columnId` are independent concepts by design: `status` is the card's lifecycle (open/done/closed), `columnId` is its position in the board's workflow. A card can sit in a "Done" column while `status` is still `open` - nothing syncs them automatically.
 - There's no card delete endpoint, only status transitions (`close`/`reopen`) - this preserves history. Revisit if that turns out to be wrong.
+- There's no board delete endpoint either (only column add/rename/delete within a board). Deleting a whole board isn't currently possible via the API.
+- There's no hard-delete for users - `PATCH /users/:id` with `{ active: false }` is the only removal mechanism, and an inactive user can no longer log in (see `loginWithGoogle`) but their historical assignments/comments remain intact.
 - `order` is a plain integer per column, not fractional - reordering N cards in a column means the client may need to PATCH up to N cards' `order` values.
 - Frontend login flow: render Google Identity Services' "Sign in with Google" button with the `GOOGLE_CLIENT_ID`, POST the resulting `credential` to `POST /auth/google`, store the returned `token`, and attach it as `Authorization: Bearer <token>` on every request thereafter. A 401 on any request means the token is missing/expired/invalid - re-run the login flow.
