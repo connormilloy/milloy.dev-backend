@@ -1,12 +1,12 @@
 const express = require('express');
 const { listTags, createTag, updateTag, deleteTag } = require('./tags.service');
-const { requireApiKey } = require('../shared/auth');
+const { requireSession } = require('../shared/requireSession');
 const { sendRouteError } = require('../shared/errors');
 const { fambanRateLimiter } = require('../shared/rateLimiters');
 
 const router = express.Router();
 
-router.get('/', fambanRateLimiter, async (req, res) => {
+router.get('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const tags = await listTags();
 
@@ -16,7 +16,7 @@ router.get('/', fambanRateLimiter, async (req, res) => {
   }
 });
 
-router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.post('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { name, color } = req.body;
     const tag = await createTag({ name, color });
@@ -27,7 +27,7 @@ router.post('/', fambanRateLimiter, requireApiKey, async (req, res) => {
   }
 });
 
-router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.patch('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     const { name, color } = req.body;
     const tag = await updateTag(req.params.id, { name, color });
@@ -38,7 +38,7 @@ router.patch('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
   }
 });
 
-router.delete('/:id', fambanRateLimiter, requireApiKey, async (req, res) => {
+router.delete('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
     await deleteTag(req.params.id);
 
