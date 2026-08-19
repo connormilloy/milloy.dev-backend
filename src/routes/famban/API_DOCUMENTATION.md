@@ -84,13 +84,14 @@ MongoDB (the shared client from `src/database/mongo.js`, database `milloy-dev`).
 - `famban-boards`:
   - `name` (string, required)
   - `description` (string or null)
-  - `columns` (array, required) - `[{ id, name, order }]`, ids are UUIDs generated server-side
+  - `columns` (array, required) - `[{ id, name, order, kind }]`, ids are UUIDs generated server-side
+    - `kind` (enum: `todo` | `in_progress` | `done` | `null`, optional) - marks a column as structurally managed by card `status` (see "Column kinds" below). Boards created before this field existed have no `kind` on any column and are left as-is (see "Implementation notes").
   - `createdAt`, `updatedAt` (date, required)
 
 - `famban-cards`:
   - `boardId` (ObjectId, required), `columnId` (string, required - references a `columns[].id` on the board)
   - `title` (string, required), `description` (string or null)
-  - `status` (enum: `open` | `done` | `closed`, required)
+  - `status` (enum: `open` | `in_progress` | `done` | `closed`, required)
   - `assignees` (ObjectId[], required) - references `famban-users`
   - `tags` (ObjectId[], required) - references `famban-tags`
   - `order` (int, required) - position within its column
@@ -114,9 +115,11 @@ Indexes: `famban-users.email` (unique, sparse), `famban-tags.name` (unique, case
   - `USER_ALREADY_EXISTS` / `TAG_ALREADY_EXISTS` (409) - duplicate email/name
   - `INVALID_TAG_COLOR` (400) - color isn't a `#rrggbb` hex string
   - `INVALID_ASSIGNEES` / `INVALID_TAGS` (400) - one or more referenced ids don't exist
-  - `INVALID_STATUS` (400) - status isn't `open`/`done`/`closed`
+  - `INVALID_STATUS` (400) - status isn't `open`/`in_progress`/`done`/`closed`
   - `INVALID_ORDER` (400) - `order` isn't an integer
   - `COLUMN_NOT_EMPTY` (409) - tried to delete a column that still has cards on it
+  - `COLUMN_KIND_PROTECTED` (400) - tried to delete a `todo`/`in_progress`/`done` kinded column; only plain (`kind: null`) columns can be deleted
+  - `COLUMN_STATUS_MANAGED` (400) - tried to create or move a card directly into an `in_progress` or `done` kinded column; those are only reachable via `POST /kanban/cards/:id/status`
   - `GOOGLE_CREDENTIAL_REQUIRED` (400) - `POST /auth/google` called without a `credential`
   - `INVALID_GOOGLE_CREDENTIAL` (401) - the Google ID token failed signature/audience verification
   - `GOOGLE_EMAIL_UNVERIFIED` (401) - the Google account's email isn't verified
@@ -325,14 +328,21 @@ Errors: `INVALID_ID` (400), `TAG_NOT_FOUND` (404).
     {
       "id": "589d7e78-bebf-4348-92e9-12d4f2e94f7e",
       "name": "To Do",
-      "order": 0
+      "order": 0,
+      "kind": "todo"
     },
     {
       "id": "28ecc1ec-de41-4113-a250-7930ec4329f7",
       "name": "In Progress",
-      "order": 1
+      "order": 1,
+      "kind": "in_progress"
     },
-    { "id": "2b74979d-9983-4333-913e-a009a74ee7c4", "name": "Done", "order": 2 }
+    {
+      "id": "2b74979d-9983-4333-913e-a009a74ee7c4",
+      "name": "Done",
+      "order": 2,
+      "kind": "done"
+    }
   ],
   "createdAt": "2026-08-02T21:32:01.497Z",
   "updatedAt": "2026-08-02T21:32:01.497Z"
@@ -345,9 +355,9 @@ Errors: `INVALID_ID` (400), `BOARD_NOT_FOUND` (404).
 
 ### 12) POST /kanban/boards
 
-- Description: Create a board. If `columns` isn't provided, defaults to `["To Do", "In Progress", "Done"]`.
+- Description: Create a board. Every board always gets the three managed columns seeded first - To Do (`kind: "todo"`, order 0), In Progress (`kind: "in_progress"`, order 1), Done (`kind: "done"`, order 2) - regardless of what's passed. If `columns` is provided, those names are appended after the three managed columns as plain (`kind: null`) columns; if omitted, the board just has the three managed columns.
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
-- Request body: `name` (string, required), `description` (string, optional), `columns` (string[], optional - column names, ids are generated)
+- Request body: `name` (string, required), `description` (string, optional), `columns` (string[], optional - extra plain column names, appended after the managed defaults; ids are generated)
 
 ```json
 { "name": "Chores", "description": "Weekly household chores" }
@@ -369,10 +379,10 @@ Errors: `INVALID_ID`, `BOARD_NAME_REQUIRED` (400), `BOARD_NOT_FOUND` (404).
 
 ### 14) POST /kanban/boards/:id/columns
 
-- Description: Add a column to a board (appended at the end).
+- Description: Add a plain column to a board (appended at the end, always `kind: null`). There's no way to add another managed (`todo`/`in_progress`/`done`) column - every board gets exactly one of each, seeded at creation.
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
 - Request body: `name` (string, required)
-- Successful response: 201, returns the new `{ id, name, order }`
+- Successful response: 201, returns the new `{ id, name, order, kind: null }`
 
 Errors: `INVALID_ID`, `COLUMN_NAME_REQUIRED` (400), `BOARD_NOT_FOUND` (404).
 
@@ -380,7 +390,7 @@ Errors: `INVALID_ID`, `COLUMN_NAME_REQUIRED` (400), `BOARD_NOT_FOUND` (404).
 
 ### 15) PATCH /kanban/boards/:id/columns/:columnId
 
-- Description: Rename a column.
+- Description: Rename a column. Managed columns (`kind: "todo"`/`"in_progress"`/`"done"`) can be renamed like any other - only their `kind` is protected, not their label.
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
 - Request body: `name` (string, required)
 
@@ -390,11 +400,11 @@ Errors: `INVALID_ID`, `COLUMN_NAME_REQUIRED` (400), `BOARD_NOT_FOUND` / `COLUMN_
 
 ### 16) DELETE /kanban/boards/:id/columns/:columnId
 
-- Description: Delete a column. Blocked if any card is still in that column.
+- Description: Delete a column. Blocked if any card is still in that column, or if the column is one of the three managed columns (`kind` is not `null`) - those can't be removed, only renamed.
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
 - Successful response: 200 `{ "message": "Column deleted successfully" }`
 
-Errors: `INVALID_ID` (400), `BOARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404), `COLUMN_NOT_EMPTY` (409).
+Errors: `INVALID_ID` (400), `BOARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404), `COLUMN_KIND_PROTECTED` (400), `COLUMN_NOT_EMPTY` (409).
 
 ---
 
@@ -403,7 +413,7 @@ Errors: `INVALID_ID` (400), `BOARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404), `COLUM
 ### 17) GET /kanban/cards
 
 - Description: List cards, sorted by board/column/order.
-- Query parameters (all optional): `boardId`, `columnId`, `status` (`open`|`done`|`closed`), `assignee` (user id), `tag` (tag id)
+- Query parameters (all optional): `boardId`, `columnId`, `status` (`open`|`in_progress`|`done`|`closed`), `assignee` (user id), `tag` (tag id)
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
 - Rate limiting: `fambanRateLimiter`
 
@@ -450,7 +460,7 @@ Errors: `INVALID_ID` (400), `CARD_NOT_FOUND` (404).
 
 ### 19) POST /kanban/cards
 
-- Description: Create a card in a board's column. `order` is computed automatically (appended to the end of the column). `status` always starts as `open`.
+- Description: Create a card in a board's column. `order` is computed automatically (appended to the end of the column). `status` always starts as `open`. `columnId` must target a `todo`-kind or plain (`kind: null`) column - the `in_progress` and `done` kinded columns can't be targeted directly, only reached via `POST /kanban/cards/:id/status` (see below).
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
 - Request body: `boardId` (required), `columnId` (required), `title` (required), `description` (optional), `assignees` (user id[], optional), `tags` (tag id[], optional)
 - Successful response: 201
@@ -465,25 +475,26 @@ Errors: `INVALID_ID` (400), `CARD_NOT_FOUND` (404).
 }
 ```
 
-Errors: `CARD_TITLE_REQUIRED` (400), `INVALID_ID` (400), `BOARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404), `INVALID_ASSIGNEES` / `INVALID_TAGS` (400).
+Errors: `CARD_TITLE_REQUIRED` (400), `INVALID_ID` (400), `BOARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404), `COLUMN_STATUS_MANAGED` (400), `INVALID_ASSIGNEES` / `INVALID_TAGS` (400).
 
 ---
 
 ### 20) PATCH /kanban/cards/:id
 
-- Description: General update - title, description, move to a different column, or set an explicit `order` (e.g. for drag-and-drop reordering within a column). Moving to a new column without an explicit `order` appends the card to the end of the destination column.
+- Description: General update - title, description, move to a different column, or set an explicit `order` (e.g. for drag-and-drop reordering within a column). Moving to a new column without an explicit `order` appends the card to the end of the destination column. Same `columnId` restriction as card creation applies: you can't move a card directly into an `in_progress` or `done` kinded column, only via a status change.
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
 - Request body (all optional): `title`, `description`, `columnId`, `order` (integer)
 
-Errors: `CARD_TITLE_REQUIRED`, `INVALID_ORDER` (400), `CARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404).
+Errors: `CARD_TITLE_REQUIRED`, `INVALID_ORDER` (400), `CARD_NOT_FOUND` / `COLUMN_NOT_FOUND` (404), `COLUMN_STATUS_MANAGED` (400).
 
 ---
 
 ### 21) POST /kanban/cards/:id/status
 
-- Description: Transition a card's lifecycle status. Setting `done` stamps `doneAt`; setting `closed` stamps `closedAt`; setting `open` (reopen) clears both. `status` is independent of `columnId` - moving a card to a "Done" column does not itself change `status`.
+- Description: Transition a card's lifecycle status. `open`, `in_progress`, and `done` each map to a column kind (`todo`, `in_progress`, `done` respectively) - setting one of these statuses also moves the card to the board's column of that kind (looked up by `boardId`), so this is the only way to get a card into or out of the `in_progress`/`done` columns. `closed` is orthogonal and doesn't touch `columnId` - a card can be closed while sitting anywhere. Setting `done` stamps `doneAt`; setting `closed` stamps `closedAt`; any other status clears both.
+  - On a board created before the `kind` field existed (all columns `kind: null`), there's no matching-kind column to move to, so `columnId` is simply left untouched and only `status`/`doneAt`/`closedAt` change - the pre-existing fully-independent behavior, preserved for those boards.
 - Authentication: Requires a session (`Authorization: Bearer <token>`).
-- Request body: `status` (`open` | `done` | `closed`, required)
+- Request body: `status` (`open` | `in_progress` | `done` | `closed`, required)
 
 ```json
 { "status": "done" }
@@ -540,7 +551,27 @@ Errors: `COMMENT_TEXT_REQUIRED` (400), `CARD_NOT_FOUND` (404).
 
 - All ids are MongoDB ObjectIds serialized as hex strings (`_id`, `boardId`, entries in `assignees`/`tags`), except `columnId`, which is a UUID scoped to its board's `columns[]` array.
 - Dates are ISO 8601 strings (`Date` serialized via `JSON.stringify`).
-- `status` and `columnId` are independent concepts by design: `status` is the card's lifecycle (open/done/closed), `columnId` is its position in the board's workflow. A card can sit in a "Done" column while `status` is still `open` - nothing syncs them automatically.
+
+## Column kinds
+
+Every board created via `POST /kanban/boards` always has exactly three managed columns, seeded first and identified by `kind` rather than by name:
+
+- `kind: "todo"` - To Do
+- `kind: "in_progress"` - In Progress
+- `kind: "done"` - Done
+
+Any additional columns (from the `columns` request body on creation, or added later via `POST /kanban/boards/:id/columns`) are plain organizational columns with `kind: null` - they carry no status meaning at all; a card in one keeps whatever `status` it already had, and moving it there or away doesn't change `status`.
+
+**Do not detect "the Done column" by name-matching `column.name`** (this was the fragile pattern the `kind` field replaces) - check `column.kind === "done"` instead. Labels are just display text: managed columns can be renamed (`PATCH /kanban/boards/:id/columns/:columnId`) freely, so a renamed "Done" column is still `kind: "done"`.
+
+The coupling only runs one direction, and only for the two managed non-todo kinds:
+
+- **Card status → column**: `POST /kanban/cards/:id/status` with `open`/`in_progress`/`done` moves the card to the board's column of the matching kind. This is the *only* way a card ends up in the `in_progress` or `done` column.
+- **Column → card status**: none. Directly setting `columnId` (via create or `PATCH /kanban/cards/:id`) to the `todo` column or any plain column is allowed and does **not** change `status` - e.g. a card can be `status: "done"` while sitting in a plain column, or dragged between plain columns without affecting status. Only the `in_progress`/`done` columns are locked out of direct `columnId` targeting (`COLUMN_STATUS_MANAGED`), specifically because there'd be no way to represent "in this column but status doesn't match" for those two.
+- `closed` has no column at all - it's an orthogonal "abandoned/cancelled" flag on top of whatever column the card happens to be sitting in.
+- Reopening a card (any status back to `open`) always sends it to the `todo` column, not back to wherever it was before it advanced - there's no position history kept.
+
+**Legacy boards**: boards created before this field existed have `kind: null` on every column (no migration was run - see `boards.schema.js` history if you need the exact cutover point). For those boards, `POST /kanban/cards/:id/status` still updates `status`/`doneAt`/`closedAt` normally, but since there's no `in_progress`/`done`-kind column to move a card *to*, `columnId` is left untouched - i.e. `status` and `columnId` remain fully independent on those boards, exactly like before this feature. Frontend code that still wants a "Done" grouping for a legacy board has no structural signal to key off (`kind` is `null` everywhere) and must keep whatever it was doing before.
 - There's no card delete endpoint, only status transitions (`close`/`reopen`) - this preserves history. Revisit if that turns out to be wrong.
 - There's no board delete endpoint either (only column add/rename/delete within a board). Deleting a whole board isn't currently possible via the API.
 - There's no hard-delete for users - `PATCH /users/:id` with `{ active: false }` is the only removal mechanism, and an inactive user can no longer log in (see `loginWithGoogle`) but their historical assignments/comments remain intact.

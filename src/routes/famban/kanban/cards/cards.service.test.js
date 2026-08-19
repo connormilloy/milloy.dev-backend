@@ -12,7 +12,11 @@ jest.mock('../boards/boards.service');
 const { getDb } = require('../../../../database/mongo');
 const { resolveUserIds } = require('../../users/users.service');
 const { resolveTagIds } = require('../../tags/tags.service');
-const { getBoardById, requireColumn } = require('../boards/boards.service');
+const {
+  getBoardById,
+  requireColumn,
+  findColumnByKind,
+} = require('../boards/boards.service');
 
 const {
   listCards,
@@ -165,6 +169,18 @@ describe('cards.service', () => {
       expect(card.assignees).toEqual([userId]);
       expect(card.tags).toEqual([tagId]);
     });
+
+    test('rejects creating directly into an in_progress or done kind column', async () => {
+      requireColumn.mockReturnValue({ id: 'col-doing', kind: 'in_progress' });
+
+      await expect(
+        createCard({
+          boardId: board._id.toHexString(),
+          columnId: 'col-doing',
+          title: 'Take out bins',
+        })
+      ).rejects.toMatchObject({ code: 'COLUMN_STATUS_MANAGED', status: 400 });
+    });
   });
 
   describe('updateCard', () => {
@@ -231,13 +247,23 @@ describe('cards.service', () => {
         updateCard(existingCard._id.toHexString(), { order: 1.5 })
       ).rejects.toMatchObject({ code: 'INVALID_ORDER', status: 400 });
     });
+
+    test('rejects moving a card directly into an in_progress or done kind column', async () => {
+      requireColumn.mockReturnValue({ id: 'col-2', kind: 'done' });
+
+      await expect(
+        updateCard(existingCard._id.toHexString(), { columnId: 'col-2' })
+      ).rejects.toMatchObject({ code: 'COLUMN_STATUS_MANAGED', status: 400 });
+    });
   });
 
   describe('setCardStatus', () => {
-    const card = { _id: new ObjectId() };
+    const card = { _id: new ObjectId(), boardId: new ObjectId() };
 
     beforeEach(() => {
       cardsCollection.findOne.mockResolvedValue(card);
+      getBoardById.mockResolvedValue({ columns: [] });
+      findColumnByKind.mockReturnValue(null);
     });
 
     test('throws INVALID_STATUS for an unrecognized value', async () => {
@@ -268,6 +294,61 @@ describe('cards.service', () => {
       const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
       expect(update.$set.doneAt).toBeNull();
       expect(update.$set.closedAt).toBeNull();
+    });
+
+    test('accepts in_progress and clears both timestamps', async () => {
+      cardsCollection.findOneAndUpdate.mockResolvedValue(card);
+
+      await setCardStatus(card._id.toHexString(), 'in_progress');
+
+      const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
+      expect(update.$set.status).toBe('in_progress');
+      expect(update.$set.doneAt).toBeNull();
+      expect(update.$set.closedAt).toBeNull();
+    });
+
+    test.each([
+      ['open', 'todo'],
+      ['in_progress', 'in_progress'],
+      ['done', 'done'],
+    ])(
+      'moves the card to the matching-kind column when setting status %s',
+      async (status, kind) => {
+        const targetColumn = { id: 'col-target', kind };
+        findColumnByKind.mockReturnValue(targetColumn);
+        cardsCollection.findOneAndUpdate.mockResolvedValue(card);
+
+        await setCardStatus(card._id.toHexString(), status);
+
+        expect(getBoardById).toHaveBeenCalledWith(card.boardId);
+        expect(findColumnByKind).toHaveBeenCalledWith(
+          expect.anything(),
+          kind
+        );
+        const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
+        expect(update.$set.columnId).toBe('col-target');
+      }
+    );
+
+    test('leaves columnId untouched on a legacy board with no matching-kind column', async () => {
+      findColumnByKind.mockReturnValue(null);
+      cardsCollection.findOneAndUpdate.mockResolvedValue(card);
+
+      await setCardStatus(card._id.toHexString(), 'done');
+
+      const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
+      expect(update.$set.columnId).toBeUndefined();
+    });
+
+    test('does not touch columnId when closing (orthogonal to column)', async () => {
+      cardsCollection.findOneAndUpdate.mockResolvedValue(card);
+
+      await setCardStatus(card._id.toHexString(), 'closed');
+
+      expect(getBoardById).not.toHaveBeenCalled();
+      expect(findColumnByKind).not.toHaveBeenCalled();
+      const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
+      expect(update.$set.columnId).toBeUndefined();
     });
   });
 

@@ -7,8 +7,6 @@ const {
   CARDS_COLLECTION,
 } = require('../../shared/collections');
 
-const DEFAULT_COLUMN_NAMES = ['To Do', 'In Progress', 'Done'];
-
 function boardsCollection() {
   return getDb().collection(BOARDS_COLLECTION);
 }
@@ -17,7 +15,7 @@ function cardsCollection() {
   return getDb().collection(CARDS_COLLECTION);
 }
 
-function buildColumn(name, order) {
+function buildColumn(name, order, kind = null) {
   const trimmedName = String(name || '').trim();
 
   if (!trimmedName) {
@@ -28,7 +26,13 @@ function buildColumn(name, order) {
     );
   }
 
-  return { id: crypto.randomUUID(), name: trimmedName, order };
+  return { id: crypto.randomUUID(), name: trimmedName, order, kind };
+}
+
+// Returns the board's column of the given kind ('todo' | 'in_progress' |
+// 'done'), or null if the board has none (e.g. a pre-kind legacy board).
+function findColumnByKind(board, kind) {
+  return board.columns.find((c) => c.kind === kind) || null;
 }
 
 async function listBoards() {
@@ -64,18 +68,21 @@ async function createBoard({ name, description, columns }) {
     throw createAppError('Board name is required', 'BOARD_NAME_REQUIRED', 400);
   }
 
-  const columnNames =
-    Array.isArray(columns) && columns.length > 0
-      ? columns
-      : DEFAULT_COLUMN_NAMES;
+  const defaultColumns = [
+    buildColumn('To Do', 0, 'todo'),
+    buildColumn('In Progress', 1, 'in_progress'),
+    buildColumn('Done', 2, 'done'),
+  ];
+  const customColumnNames = Array.isArray(columns) ? columns : [];
+  const customColumns = customColumnNames.map((columnName, index) =>
+    buildColumn(columnName, defaultColumns.length + index)
+  );
 
   const now = new Date();
   const doc = {
     name: trimmedName,
     description: description ? String(description).trim() : null,
-    columns: columnNames.map((columnName, index) =>
-      buildColumn(columnName, index)
-    ),
+    columns: [...defaultColumns, ...customColumns],
     createdAt: now,
     updatedAt: now,
   };
@@ -155,7 +162,15 @@ async function renameColumn(boardId, columnId, name) {
 
 async function deleteColumn(boardId, columnId) {
   const board = await getBoardById(boardId);
-  requireColumn(board, columnId);
+  const column = requireColumn(board, columnId);
+
+  if (column.kind) {
+    throw createAppError(
+      'Cannot delete a managed column (To Do / In Progress / Done)',
+      'COLUMN_KIND_PROTECTED',
+      400
+    );
+  }
 
   const cardCount = await cardsCollection().countDocuments({
     boardId: board._id,
@@ -180,6 +195,7 @@ module.exports = {
   listBoards,
   getBoardById,
   requireColumn,
+  findColumnByKind,
   createBoard,
   updateBoard,
   addColumn,
