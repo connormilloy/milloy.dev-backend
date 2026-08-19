@@ -18,6 +18,7 @@ const boardsValidator = {
             id: { bsonType: 'string' },
             name: { bsonType: 'string', minLength: 1 },
             order: { bsonType: 'int' },
+            kind: { enum: ['todo', 'in_progress', 'done', null] },
           },
         },
       },

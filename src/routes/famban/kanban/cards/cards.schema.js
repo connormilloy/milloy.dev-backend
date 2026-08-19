@@ -21,7 +21,7 @@ const cardsValidator = {
       columnId: { bsonType: 'string' },
       title: { bsonType: 'string', minLength: 1 },
       description: { bsonType: ['string', 'null'] },
-      status: { enum: ['open', 'done', 'closed'] },
+      status: { enum: ['open', 'in_progress', 'done', 'closed'] },
       assignees: { bsonType: 'array', items: { bsonType: 'objectId' } },
       tags: { bsonType: 'array', items: { bsonType: 'objectId' } },
       order: { bsonType: 'int' },

@@ -11,6 +11,7 @@ const {
   listBoards,
   getBoardById,
   requireColumn,
+  findColumnByKind,
   createBoard,
   updateBoard,
   addColumn,
@@ -71,6 +72,23 @@ describe('boards.service', () => {
     });
   });
 
+  describe('findColumnByKind', () => {
+    test('returns the column with the matching kind', () => {
+      const done = { id: 'c', name: 'Done', order: 2, kind: 'done' };
+      const board = {
+        columns: [{ id: 'a', name: 'To Do', order: 0, kind: 'todo' }, done],
+      };
+
+      expect(findColumnByKind(board, 'done')).toEqual(done);
+    });
+
+    test('returns null when the board has no column of that kind', () => {
+      const board = { columns: [{ id: 'a', name: 'Backlog', order: 0, kind: null }] };
+
+      expect(findColumnByKind(board, 'done')).toBeNull();
+    });
+  });
+
   describe('createBoard', () => {
     test('throws BOARD_NAME_REQUIRED for a blank name', async () => {
       await expect(createBoard({ name: '  ' })).rejects.toMatchObject({
@@ -79,7 +97,7 @@ describe('boards.service', () => {
       });
     });
 
-    test('defaults to To Do / In Progress / Done when no columns given', async () => {
+    test('always seeds To Do / In Progress / Done with matching kinds', async () => {
       boardsCollection.insertOne.mockResolvedValue({
         insertedId: new ObjectId(),
       });
@@ -92,10 +110,15 @@ describe('boards.service', () => {
         'Done',
       ]);
       expect(board.columns.map((c) => c.order)).toEqual([0, 1, 2]);
+      expect(board.columns.map((c) => c.kind)).toEqual([
+        'todo',
+        'in_progress',
+        'done',
+      ]);
       board.columns.forEach((c) => expect(typeof c.id).toBe('string'));
     });
 
-    test('uses the provided column names in order', async () => {
+    test('appends caller-supplied custom columns after the kinded defaults', async () => {
       boardsCollection.insertOne.mockResolvedValue({
         insertedId: new ObjectId(),
       });
@@ -105,7 +128,21 @@ describe('boards.service', () => {
         columns: ['Backlog', 'Live'],
       });
 
-      expect(board.columns.map((c) => c.name)).toEqual(['Backlog', 'Live']);
+      expect(board.columns.map((c) => c.name)).toEqual([
+        'To Do',
+        'In Progress',
+        'Done',
+        'Backlog',
+        'Live',
+      ]);
+      expect(board.columns.map((c) => c.order)).toEqual([0, 1, 2, 3, 4]);
+      expect(board.columns.map((c) => c.kind)).toEqual([
+        'todo',
+        'in_progress',
+        'done',
+        null,
+        null,
+      ]);
     });
   });
 
@@ -141,7 +178,7 @@ describe('boards.service', () => {
 
       const column = await addColumn(board._id.toHexString(), 'Done');
 
-      expect(column).toMatchObject({ name: 'Done', order: 1 });
+      expect(column).toMatchObject({ name: 'Done', order: 1, kind: null });
       expect(boardsCollection.updateOne).toHaveBeenCalledWith(
         { _id: board._id },
         expect.objectContaining({ $push: { columns: column } })
@@ -200,6 +237,19 @@ describe('boards.service', () => {
         { _id: board._id },
         expect.objectContaining({ $pull: { columns: { id: 'a' } } })
       );
+    });
+
+    test('throws COLUMN_KIND_PROTECTED for a kinded column', async () => {
+      const board = {
+        _id: new ObjectId(),
+        columns: [{ id: 'a', name: 'Done', order: 2, kind: 'done' }],
+      };
+      boardsCollection.findOne.mockResolvedValue(board);
+
+      await expect(
+        deleteColumn(board._id.toHexString(), 'a')
+      ).rejects.toMatchObject({ code: 'COLUMN_KIND_PROTECTED', status: 400 });
+      expect(boardsCollection.updateOne).not.toHaveBeenCalled();
     });
   });
 });

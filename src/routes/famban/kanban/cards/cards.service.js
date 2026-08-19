@@ -5,9 +5,35 @@ const { parseObjectId } = require('../../shared/ids');
 const { CARDS_COLLECTION } = require('../../shared/collections');
 const { resolveUserIds } = require('../../users/users.service');
 const { resolveTagIds } = require('../../tags/tags.service');
-const { getBoardById, requireColumn } = require('../boards/boards.service');
+const {
+  getBoardById,
+  requireColumn,
+  findColumnByKind,
+} = require('../boards/boards.service');
 
-const CARD_STATUSES = ['open', 'done', 'closed'];
+const CARD_STATUSES = ['open', 'in_progress', 'done', 'closed'];
+
+// Column kinds that are only reachable via a status transition, never by
+// directly targeting them from card create/move.
+const STATUS_MANAGED_KINDS = ['in_progress', 'done'];
+
+// Maps a card status to the column kind it should occupy on the board.
+// 'closed' has no column tie by design - it can sit anywhere.
+const COLUMN_KIND_BY_STATUS = {
+  open: 'todo',
+  in_progress: 'in_progress',
+  done: 'done',
+};
+
+function assertColumnNotStatusManaged(column) {
+  if (STATUS_MANAGED_KINDS.includes(column.kind)) {
+    throw createAppError(
+      'This column can only be reached via a card status change',
+      'COLUMN_STATUS_MANAGED',
+      400
+    );
+  }
+}
 
 function cardsCollection() {
   return getDb().collection(CARDS_COLLECTION);
@@ -85,7 +111,8 @@ async function createCard({
   }
 
   const board = await getBoardById(boardId);
-  requireColumn(board, columnId);
+  const column = requireColumn(board, columnId);
+  assertColumnNotStatusManaged(column);
 
   const assigneeIds = await resolveUserIds(assignees);
   const tagIds = await resolveTagIds(tags);
@@ -141,7 +168,8 @@ async function updateCard(id, updates) {
   }
 
   if (updates.columnId !== undefined && updates.columnId !== card.columnId) {
-    requireColumn(board, updates.columnId);
+    const column = requireColumn(board, updates.columnId);
+    assertColumnNotStatusManaged(column);
     set.columnId = updates.columnId;
     set.order =
       updates.order !== undefined
@@ -182,6 +210,15 @@ async function setCardStatus(id, status) {
   const set = { status, updatedAt: now };
   set.doneAt = status === 'done' ? now : null;
   set.closedAt = status === 'closed' ? now : null;
+
+  const targetKind = COLUMN_KIND_BY_STATUS[status];
+  if (targetKind) {
+    const board = await getBoardById(card.boardId);
+    const column = findColumnByKind(board, targetKind);
+    if (column) {
+      set.columnId = column.id;
+    }
+  }
 
   const result = await cardsCollection().findOneAndUpdate(
     { _id: card._id },
