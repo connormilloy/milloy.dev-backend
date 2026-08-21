@@ -41,6 +41,7 @@ async function createUser({ name, email }) {
   const doc = {
     name: trimmedName,
     email: normalizeEmail(email),
+    avatarUrl: null,
     active: true,
     createdAt: now,
     updatedAt: now,

@@ -11,6 +11,7 @@ const usersValidator = {
       _id: {},
       name: { bsonType: 'string', minLength: 1 },
       email: { bsonType: ['string', 'null'] },
+      avatarUrl: { bsonType: ['string', 'null'] },
       active: { bsonType: 'bool' },
       createdAt: { bsonType: 'date' },
       updatedAt: { bsonType: 'date' },

@@ -29,7 +29,12 @@ describe('auth router', () => {
   test('POST /auth/google forwards the credential and returns a token + user', async () => {
     authService.loginWithGoogle.mockResolvedValue({
       token: 'signed-token',
-      user: { _id: '1', name: 'Connor', email: 'connor@example.com' },
+      user: {
+        _id: '1',
+        name: 'Connor',
+        email: 'connor@example.com',
+        avatarUrl: 'https://lh3.googleusercontent.com/a/photo',
+      },
     });
 
     const res = await request(buildApp())
@@ -41,8 +46,26 @@ describe('auth router', () => {
     expect(res.body).toEqual({
       message: 'Logged in successfully',
       token: 'signed-token',
+      user: {
+        _id: '1',
+        name: 'Connor',
+        email: 'connor@example.com',
+        avatarUrl: 'https://lh3.googleusercontent.com/a/photo',
+      },
+    });
+  });
+
+  test('POST /auth/google defaults avatarUrl to null when the service returns none', async () => {
+    authService.loginWithGoogle.mockResolvedValue({
+      token: 'signed-token',
       user: { _id: '1', name: 'Connor', email: 'connor@example.com' },
     });
+
+    const res = await request(buildApp())
+      .post('/api/famban/auth/google')
+      .send({ credential: 'google-id-token' });
+
+    expect(res.body.user.avatarUrl).toBeNull();
   });
 
   test('POST /auth/google translates a service error to its status/code', async () => {

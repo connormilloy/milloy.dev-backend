@@ -123,5 +123,56 @@ describe('auth.service', () => {
       expect(result.user).toEqual(user);
       expect(typeof result.token).toBe('string');
     });
+
+    test('backfills avatarUrl from the Google payload when it differs from the stored value', async () => {
+      const user = {
+        _id: new ObjectId(),
+        name: 'Connor',
+        email: 'connor@example.com',
+        avatarUrl: null,
+      };
+      verifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          email: 'connor@example.com',
+          email_verified: true,
+          picture: 'https://lh3.googleusercontent.com/a/new-photo',
+        }),
+      });
+      usersCollection.findOne.mockResolvedValue(user);
+
+      const result = await loginWithGoogle('token');
+
+      expect(usersCollection.updateOne).toHaveBeenCalledWith(
+        { _id: user._id },
+        {
+          $set: {
+            avatarUrl: 'https://lh3.googleusercontent.com/a/new-photo',
+            updatedAt: expect.any(Date),
+          },
+        }
+      );
+      expect(result.user.avatarUrl).toBe(
+        'https://lh3.googleusercontent.com/a/new-photo'
+      );
+    });
+
+    test('does not write when the Google payload has no picture and none is stored', async () => {
+      const user = {
+        _id: new ObjectId(),
+        name: 'Connor',
+        email: 'connor@example.com',
+      };
+      verifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          email: 'connor@example.com',
+          email_verified: true,
+        }),
+      });
+      usersCollection.findOne.mockResolvedValue(user);
+
+      await loginWithGoogle('token');
+
+      expect(usersCollection.updateOne).not.toHaveBeenCalled();
+    });
   });
 });

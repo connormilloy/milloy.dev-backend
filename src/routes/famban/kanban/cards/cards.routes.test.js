@@ -59,6 +59,8 @@ describe('cards router', () => {
     ['post', `/api/famban/kanban/cards/${cardId}/assign`],
     ['post', `/api/famban/kanban/cards/${cardId}/tags`],
     ['post', `/api/famban/kanban/cards/${cardId}/comments`],
+    ['patch', `/api/famban/kanban/cards/${cardId}/comments/comment-1`],
+    ['delete', `/api/famban/kanban/cards/${cardId}/comments/comment-1`],
   ])('%s %s rejects requests without a session', async (method, path) => {
     const res = await request(buildApp())[method](path).send({});
 
@@ -107,6 +109,54 @@ describe('cards router', () => {
     expect(cardsService.addComment).toHaveBeenCalledWith(cardId, {
       userId: sessionUserId,
       text: 'On it',
+    });
+  });
+
+  test('PATCH /cards/:id/comments/:commentId uses the session identity for userId, ignoring any client-supplied value', async () => {
+    cardsService.editComment.mockResolvedValue({ _id: cardId, comments: [] });
+
+    const res = await request(buildApp())
+      .patch(`/api/famban/kanban/cards/${cardId}/comments/comment-1`)
+      .set('Authorization', authHeader)
+      .send({ userId: 'attacker-supplied-id', text: 'Updated' });
+
+    expect(res.status).toBe(200);
+    expect(cardsService.editComment).toHaveBeenCalledWith(
+      cardId,
+      'comment-1',
+      { userId: sessionUserId, text: 'Updated' }
+    );
+  });
+
+  test('DELETE /cards/:id/comments/:commentId uses the session identity for userId', async () => {
+    cardsService.deleteComment.mockResolvedValue({ _id: cardId, comments: [] });
+
+    const res = await request(buildApp())
+      .delete(`/api/famban/kanban/cards/${cardId}/comments/comment-1`)
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(200);
+    expect(cardsService.deleteComment).toHaveBeenCalledWith(
+      cardId,
+      'comment-1',
+      sessionUserId
+    );
+  });
+
+  test('a COMMENT_NOT_OWNER error from the service becomes a 403', async () => {
+    const err = new Error('You can only edit or delete your own comments');
+    err.code = 'COMMENT_NOT_OWNER';
+    err.status = 403;
+    cardsService.deleteComment.mockRejectedValue(err);
+
+    const res = await request(buildApp())
+      .delete(`/api/famban/kanban/cards/${cardId}/comments/comment-1`)
+      .set('Authorization', authHeader);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: 'COMMENT_NOT_OWNER',
+      message: 'You can only edit or delete your own comments',
     });
   });
 

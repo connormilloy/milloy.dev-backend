@@ -2,12 +2,14 @@
 const boardsValidator = {
   $jsonSchema: {
     bsonType: 'object',
-    required: ['name', 'columns', 'createdAt', 'updatedAt'],
+    required: ['name', 'columns', 'archived', 'createdAt', 'updatedAt'],
     additionalProperties: false,
     properties: {
       _id: {},
       name: { bsonType: 'string', minLength: 1 },
       description: { bsonType: ['string', 'null'] },
+      archived: { bsonType: 'bool' },
+      archivedAt: { bsonType: ['date', 'null'] },
       columns: {
         bsonType: 'array',
         items: {

@@ -35,8 +35,10 @@ function findColumnByKind(board, kind) {
   return board.columns.find((c) => c.kind === kind) || null;
 }
 
-async function listBoards() {
-  return boardsCollection().find({}).sort({ name: 1 }).toArray();
+async function listBoards({ includeArchived = false } = {}) {
+  const query = includeArchived ? {} : { archived: { $ne: true } };
+
+  return boardsCollection().find(query).sort({ name: 1 }).toArray();
 }
 
 async function getBoardById(id) {
@@ -83,6 +85,8 @@ async function createBoard({ name, description, columns }) {
     name: trimmedName,
     description: description ? String(description).trim() : null,
     columns: [...defaultColumns, ...customColumns],
+    archived: false,
+    archivedAt: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -94,7 +98,8 @@ async function createBoard({ name, description, columns }) {
 async function updateBoard(id, updates) {
   await getBoardById(id);
   const objectId = parseObjectId(id, 'board id');
-  const set = { updatedAt: new Date() };
+  const now = new Date();
+  const set = { updatedAt: now };
 
   if (updates.name !== undefined) {
     const trimmedName = String(updates.name || '').trim();
@@ -114,6 +119,12 @@ async function updateBoard(id, updates) {
     set.description = updates.description
       ? String(updates.description).trim()
       : null;
+  }
+
+  if (updates.archived !== undefined) {
+    const archived = Boolean(updates.archived);
+    set.archived = archived;
+    set.archivedAt = archived ? now : null;
   }
 
   const result = await boardsCollection().findOneAndUpdate(
