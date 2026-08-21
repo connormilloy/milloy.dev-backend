@@ -29,13 +29,14 @@ const cardsValidator = {
         bsonType: 'array',
         items: {
           bsonType: 'object',
-          required: ['id', 'text', 'createdAt'],
+          required: ['id', 'text', 'createdAt', 'editedAt'],
           additionalProperties: false,
           properties: {
             id: { bsonType: 'string' },
             userId: { bsonType: ['objectId', 'null'] },
             text: { bsonType: 'string', minLength: 1 },
             createdAt: { bsonType: 'date' },
+            editedAt: { bsonType: ['date', 'null'] },
           },
         },
       },

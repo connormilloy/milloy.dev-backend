@@ -274,11 +274,80 @@ async function addComment(id, { userId, text }) {
     userId: resolvedUserId,
     text: trimmedText,
     createdAt: new Date(),
+    editedAt: null,
   };
 
   const result = await cardsCollection().findOneAndUpdate(
     { _id: card._id },
     { $push: { comments: comment }, $set: { updatedAt: new Date() } },
+    { returnDocument: 'after' }
+  );
+
+  return result;
+}
+
+// Throws if `commentId` isn't a real comment on `card`. Returns the comment.
+function requireComment(card, commentId) {
+  const comment = card.comments.find((c) => c.id === commentId);
+
+  if (!comment) {
+    throw createAppError('Comment not found', 'COMMENT_NOT_FOUND', 404);
+  }
+
+  return comment;
+}
+
+// Only the family member who posted a comment may edit or delete it - a
+// comment with no author (userId null, e.g. one predating session-based
+// attribution) can't be claimed by anyone.
+function assertCommentOwner(comment, userId) {
+  if (!comment.userId || String(comment.userId) !== String(userId)) {
+    throw createAppError(
+      'You can only edit or delete your own comments',
+      'COMMENT_NOT_OWNER',
+      403
+    );
+  }
+}
+
+async function editComment(id, commentId, { userId, text }) {
+  const trimmedText = String(text || '').trim();
+
+  if (!trimmedText) {
+    throw createAppError(
+      'Comment text is required',
+      'COMMENT_TEXT_REQUIRED',
+      400
+    );
+  }
+
+  const card = await getCardById(id);
+  const comment = requireComment(card, commentId);
+  assertCommentOwner(comment, userId);
+
+  const result = await cardsCollection().findOneAndUpdate(
+    { _id: card._id, 'comments.id': commentId },
+    {
+      $set: {
+        'comments.$.text': trimmedText,
+        'comments.$.editedAt': new Date(),
+        updatedAt: new Date(),
+      },
+    },
+    { returnDocument: 'after' }
+  );
+
+  return result;
+}
+
+async function deleteComment(id, commentId, userId) {
+  const card = await getCardById(id);
+  const comment = requireComment(card, commentId);
+  assertCommentOwner(comment, userId);
+
+  const result = await cardsCollection().findOneAndUpdate(
+    { _id: card._id },
+    { $pull: { comments: { id: commentId } }, $set: { updatedAt: new Date() } },
     { returnDocument: 'after' }
   );
 
@@ -295,4 +364,6 @@ module.exports = {
   setCardAssignees,
   setCardTags,
   addComment,
+  editComment,
+  deleteComment,
 };

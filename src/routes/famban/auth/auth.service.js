@@ -78,10 +78,22 @@ async function loginWithGoogle(idToken) {
     );
   }
 
+  // Keep the stored avatar in sync with Google on every login, so a
+  // changed profile photo shows up without any dedicated update flow.
+  const avatarUrl = payload.picture || null;
+  if (avatarUrl !== (user.avatarUrl || null)) {
+    await usersCollection().updateOne(
+      { _id: user._id },
+      { $set: { avatarUrl, updatedAt: new Date() } }
+    );
+    user.avatarUrl = avatarUrl;
+  }
+
   const token = createSessionToken({
     userId: user._id.toHexString(),
     email: user.email,
     name: user.name,
+    avatarUrl: user.avatarUrl || null,
   });
 
   return { token, user };

@@ -16,7 +16,8 @@ const router = express.Router();
 
 router.get('/', fambanRateLimiter, requireSession, async (req, res) => {
   try {
-    const boards = await listBoards();
+    const includeArchived = req.query.includeArchived === 'true';
+    const boards = await listBoards({ includeArchived });
 
     return res.status(200).json({ count: boards.length, boards });
   } catch (err) {
@@ -49,8 +50,12 @@ router.post('/', fambanRateLimiter, requireSession, async (req, res) => {
 
 router.patch('/:id', fambanRateLimiter, requireSession, async (req, res) => {
   try {
-    const { name, description } = req.body;
-    const board = await updateBoard(req.params.id, { name, description });
+    const { name, description, archived } = req.body;
+    const board = await updateBoard(req.params.id, {
+      name,
+      description,
+      archived,
+    });
 
     return res
       .status(200)

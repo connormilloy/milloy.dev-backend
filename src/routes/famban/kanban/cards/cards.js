@@ -8,6 +8,8 @@ const {
   setCardAssignees,
   setCardTags,
   addComment,
+  editComment,
+  deleteComment,
 } = require('./cards.service');
 const { requireSession } = require('../../shared/requireSession');
 const { sendRouteError } = require('../../shared/errors');
@@ -143,6 +145,48 @@ router.post(
         .json({ message: 'Comment added successfully', card });
     } catch (err) {
       return sendRouteError(res, err, 'Failed to add comment');
+    }
+  }
+);
+
+router.patch(
+  '/:id/comments/:commentId',
+  fambanRateLimiter,
+  requireSession,
+  async (req, res) => {
+    try {
+      const { text } = req.body;
+      const card = await editComment(req.params.id, req.params.commentId, {
+        userId: req.fambanUser.userId,
+        text,
+      });
+
+      return res
+        .status(200)
+        .json({ message: 'Comment updated successfully', card });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to update comment');
+    }
+  }
+);
+
+router.delete(
+  '/:id/comments/:commentId',
+  fambanRateLimiter,
+  requireSession,
+  async (req, res) => {
+    try {
+      const card = await deleteComment(
+        req.params.id,
+        req.params.commentId,
+        req.fambanUser.userId
+      );
+
+      return res
+        .status(200)
+        .json({ message: 'Comment deleted successfully', card });
+    } catch (err) {
+      return sendRouteError(res, err, 'Failed to delete comment');
     }
   }
 );

@@ -42,6 +42,24 @@ describe('boards.service', () => {
 
       await expect(listBoards()).resolves.toEqual(docs);
     });
+
+    test('excludes archived boards by default', async () => {
+      boardsCollection.find.mockReturnValue(createMockCursor([]));
+
+      await listBoards();
+
+      expect(boardsCollection.find).toHaveBeenCalledWith({
+        archived: { $ne: true },
+      });
+    });
+
+    test('includes archived boards when includeArchived is true', async () => {
+      boardsCollection.find.mockReturnValue(createMockCursor([]));
+
+      await listBoards({ includeArchived: true });
+
+      expect(boardsCollection.find).toHaveBeenCalledWith({});
+    });
   });
 
   describe('getBoardById / requireColumn', () => {
@@ -95,6 +113,17 @@ describe('boards.service', () => {
         code: 'BOARD_NAME_REQUIRED',
         status: 400,
       });
+    });
+
+    test('starts unarchived', async () => {
+      boardsCollection.insertOne.mockResolvedValue({
+        insertedId: new ObjectId(),
+      });
+
+      const board = await createBoard({ name: 'Chores' });
+
+      expect(board.archived).toBe(false);
+      expect(board.archivedAt).toBeNull();
     });
 
     test('always seeds To Do / In Progress / Done with matching kinds', async () => {
@@ -165,6 +194,45 @@ describe('boards.service', () => {
       await expect(
         updateBoard(new ObjectId().toHexString(), { name: '  ' })
       ).rejects.toMatchObject({ code: 'BOARD_NAME_REQUIRED' });
+    });
+
+    test('sets archived and stamps archivedAt when archived: true', async () => {
+      const board = { _id: new ObjectId(), name: 'Chores' };
+      boardsCollection.findOne.mockResolvedValue(board);
+      boardsCollection.findOneAndUpdate.mockResolvedValue({
+        ...board,
+        archived: true,
+      });
+
+      await updateBoard(board._id.toHexString(), { archived: true });
+
+      expect(boardsCollection.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: board._id },
+        {
+          $set: expect.objectContaining({
+            archived: true,
+            archivedAt: expect.any(Date),
+          }),
+        },
+        { returnDocument: 'after' }
+      );
+    });
+
+    test('clears archivedAt when archived: false', async () => {
+      const board = { _id: new ObjectId(), name: 'Chores', archived: true };
+      boardsCollection.findOne.mockResolvedValue(board);
+      boardsCollection.findOneAndUpdate.mockResolvedValue({
+        ...board,
+        archived: false,
+      });
+
+      await updateBoard(board._id.toHexString(), { archived: false });
+
+      expect(boardsCollection.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: board._id },
+        { $set: expect.objectContaining({ archived: false, archivedAt: null }) },
+        { returnDocument: 'after' }
+      );
     });
   });
 

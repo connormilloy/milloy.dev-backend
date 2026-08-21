@@ -27,6 +27,8 @@ const {
   setCardAssignees,
   setCardTags,
   addComment,
+  editComment,
+  deleteComment,
 } = require('./cards.service');
 
 describe('cards.service', () => {
@@ -418,6 +420,130 @@ describe('cards.service', () => {
       expect(resolveUserIds).not.toHaveBeenCalled();
       const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
       expect(update.$push.comments.userId).toBeNull();
+    });
+
+    test('starts with editedAt null', async () => {
+      await addComment(card._id.toHexString(), { text: 'On it' });
+
+      const [, update] = cardsCollection.findOneAndUpdate.mock.calls[0];
+      expect(update.$push.comments.editedAt).toBeNull();
+    });
+  });
+
+  describe('editComment / deleteComment', () => {
+    const authorId = new ObjectId();
+    const otherId = new ObjectId();
+    const comment = {
+      id: 'comment-1',
+      userId: authorId,
+      text: 'Original text',
+      createdAt: new Date(),
+      editedAt: null,
+    };
+    const card = { _id: new ObjectId(), comments: [comment] };
+
+    beforeEach(() => {
+      cardsCollection.findOne.mockResolvedValue(card);
+    });
+
+    describe('editComment', () => {
+      test('throws COMMENT_TEXT_REQUIRED for blank text', async () => {
+        await expect(
+          editComment(card._id.toHexString(), comment.id, {
+            userId: authorId.toHexString(),
+            text: '  ',
+          })
+        ).rejects.toMatchObject({ code: 'COMMENT_TEXT_REQUIRED', status: 400 });
+      });
+
+      test('throws COMMENT_NOT_FOUND when the comment does not exist on the card', async () => {
+        await expect(
+          editComment(card._id.toHexString(), 'missing', {
+            userId: authorId.toHexString(),
+            text: 'New text',
+          })
+        ).rejects.toMatchObject({ code: 'COMMENT_NOT_FOUND', status: 404 });
+      });
+
+      test('throws COMMENT_NOT_OWNER when the caller did not post the comment', async () => {
+        await expect(
+          editComment(card._id.toHexString(), comment.id, {
+            userId: otherId.toHexString(),
+            text: 'New text',
+          })
+        ).rejects.toMatchObject({ code: 'COMMENT_NOT_OWNER', status: 403 });
+        expect(cardsCollection.findOneAndUpdate).not.toHaveBeenCalled();
+      });
+
+      test('throws COMMENT_NOT_OWNER when the comment has no author', async () => {
+        const orphanCard = {
+          _id: new ObjectId(),
+          comments: [{ ...comment, userId: null }],
+        };
+        cardsCollection.findOne.mockResolvedValue(orphanCard);
+
+        await expect(
+          editComment(orphanCard._id.toHexString(), comment.id, {
+            userId: authorId.toHexString(),
+            text: 'New text',
+          })
+        ).rejects.toMatchObject({ code: 'COMMENT_NOT_OWNER', status: 403 });
+      });
+
+      test('updates the comment text and stamps editedAt when the author matches', async () => {
+        cardsCollection.findOneAndUpdate.mockResolvedValue(card);
+
+        await editComment(card._id.toHexString(), comment.id, {
+          userId: authorId.toHexString(),
+          text: '  New text  ',
+        });
+
+        expect(cardsCollection.findOneAndUpdate).toHaveBeenCalledWith(
+          { _id: card._id, 'comments.id': comment.id },
+          {
+            $set: expect.objectContaining({
+              'comments.$.text': 'New text',
+              'comments.$.editedAt': expect.any(Date),
+              updatedAt: expect.any(Date),
+            }),
+          },
+          { returnDocument: 'after' }
+        );
+      });
+    });
+
+    describe('deleteComment', () => {
+      test('throws COMMENT_NOT_FOUND when the comment does not exist on the card', async () => {
+        await expect(
+          deleteComment(card._id.toHexString(), 'missing', authorId.toHexString())
+        ).rejects.toMatchObject({ code: 'COMMENT_NOT_FOUND', status: 404 });
+      });
+
+      test('throws COMMENT_NOT_OWNER when the caller did not post the comment', async () => {
+        await expect(
+          deleteComment(card._id.toHexString(), comment.id, otherId.toHexString())
+        ).rejects.toMatchObject({ code: 'COMMENT_NOT_OWNER', status: 403 });
+        expect(cardsCollection.findOneAndUpdate).not.toHaveBeenCalled();
+      });
+
+      test('pulls the comment when the author matches', async () => {
+        cardsCollection.findOneAndUpdate.mockResolvedValue(card);
+
+        await deleteComment(
+          card._id.toHexString(),
+          comment.id,
+          authorId.toHexString()
+        );
+
+        expect(cardsCollection.findOneAndUpdate).toHaveBeenCalledWith(
+          { _id: card._id },
+          {
+            $pull: { comments: { id: comment.id } },
+            $set: { updatedAt: expect.any(Date) },
+          },
+          { returnDocument: 'after' }
+        );
+      });
     });
   });
 });

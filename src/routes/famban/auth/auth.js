@@ -19,6 +19,7 @@ router.post('/google', fambanRateLimiter, async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        avatarUrl: user.avatarUrl || null,
       },
     });
   } catch (err) {
